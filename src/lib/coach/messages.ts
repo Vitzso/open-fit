@@ -1,6 +1,13 @@
 // Assembles the chat messages sent to the model: instructions + data + recent conversation.
 import type { ChatMessage } from "@/lib/ollama";
+import { formatCoachInstructions } from "./instructions";
 import { COACH_SYSTEM_PROMPT } from "./prompt";
+
+/** What the system message is built from: the data block and the client's optional instructions. */
+export interface CoachPromptInput {
+  text: string;
+  instructions?: string | null;
+}
 
 /** Max characters of earlier conversation sent with each question, so the prompt fits the context window. */
 export const HISTORY_CHAR_BUDGET = 6000;
@@ -20,18 +27,22 @@ export function trimHistory(history: { role: string; content: string }[], budget
   return out;
 }
 
-/** Wraps the data block in <client_data> tags so the model can tell log data apart from instructions. */
-export function coachSystemMessage(contextText: string): ChatMessage {
+/** Instructions, then the client's preferences, then the data block wrapped in <client_data> tags. */
+export function coachSystemMessage({ text, instructions }: CoachPromptInput): ChatMessage {
   // Neutralise any literal closing tag a user typed into a note.
-  const safe = contextText.replace(/<\/?client_data>/gi, "");
-  return { role: "system", content: `${COACH_SYSTEM_PROMPT}\n\n<client_data>\n${safe}\n</client_data>` };
+  const safe = text.replace(/<\/?client_data>/gi, "");
+  const prefs = formatCoachInstructions(instructions);
+  return {
+    role: "system",
+    content: `${COACH_SYSTEM_PROMPT}${prefs ? `\n\n${prefs}` : ""}\n\n<client_data>\n${safe}\n</client_data>`,
+  };
 }
 
 /** System prompt + fresh data block + recent conversation + the new question. */
 export function buildCoachMessages(
-  context: { text: string },
+  context: CoachPromptInput,
   history: { role: string; content: string }[],
   question: string,
 ): ChatMessage[] {
-  return [coachSystemMessage(context.text), ...trimHistory(history, HISTORY_CHAR_BUDGET), { role: "user", content: question }];
+  return [coachSystemMessage(context), ...trimHistory(history, HISTORY_CHAR_BUDGET), { role: "user", content: question }];
 }

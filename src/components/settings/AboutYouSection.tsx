@@ -1,8 +1,9 @@
 import { ACTIVITY, type Activity } from "@/lib/energy";
 import type { AppSettings } from "@/lib/settings";
-import { card, input, label } from "@/lib/ui";
-import { round, toDisplay } from "@/lib/units";
+import { card } from "@/lib/ui";
+import { heightToDisplay, heightUnit, round, toDisplay } from "@/lib/units";
 import Field from "./Field";
+import Select from "./Select";
 
 const PACES = [
   { v: 0.5, label: "Gentle: 0.5% of body weight a week" },
@@ -11,21 +12,7 @@ const PACES = [
   { v: 1, label: "Fastest safe pace: 1% a week" },
 ];
 
-/** A labelled <select> with uncontrolled default value. */
-function Select({ name, text, value, children }: { name: string; text: string; value: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <label htmlFor={name} className={label}>
-        {text}
-      </label>
-      <select id={name} name={name} className={input} defaultValue={value}>
-        {children}
-      </select>
-    </div>
-  );
-}
-
-/** Body profile used by the calorie engine, plus pace and units. */
+/** Body profile used by the calorie engine, plus pace. Height and weight follow the chosen units. */
 export default function AboutYouSection({ s }: { s: AppSettings }) {
   return (
     <section className={`${card} space-y-3`}>
@@ -38,7 +25,13 @@ export default function AboutYouSection({ s }: { s: AppSettings }) {
           <option value="female">Female</option>
         </Select>
         <Field name="birthYear" text="Birth year" value={s.birthYear} placeholder="1990" />
-        <Field name="heightCm" text="Height (cm)" value={s.heightCm} inputMode="decimal" placeholder="178" />
+        <Field
+          name="height"
+          text={`Height (${heightUnit(s.weightUnit)})`}
+          value={s.heightCm ? round(heightToDisplay(s.heightCm, s.weightUnit), 1) : ""}
+          inputMode="decimal"
+          placeholder={s.weightUnit === "lb" ? "70" : "178"}
+        />
         <Field
           name="goalWeight"
           text={`Goal weight (${s.weightUnit})`}
@@ -60,10 +53,6 @@ export default function AboutYouSection({ s }: { s: AppSettings }) {
             {p.label}
           </option>
         ))}
-      </Select>
-      <Select name="weightUnit" text="Weight units" value={s.weightUnit}>
-        <option value="kg">Kilograms (kg)</option>
-        <option value="lb">Pounds (lb)</option>
       </Select>
     </section>
   );

@@ -8,7 +8,7 @@ import { round, toDisplay } from "./units";
 
 export interface TodayData {
   today: string;
-  /** This calendar week, Sunday to Saturday (later days have no data yet). */
+  /** This calendar week, starting on the weekday chosen in Settings (later days have no data yet). */
   week: string[];
   settings: AppSettings;
   eaten: Macros;
@@ -27,9 +27,9 @@ export interface TodayData {
 /** Runs the Today screen's queries in parallel and derives what it displays. */
 export async function getTodayData(): Promise<TodayData> {
   const today = dayKey();
-  const week = currentWeek();
-  const [settings, food, weekFoodDays, weighIns, weekWorkouts, lastTemplated] = await Promise.all([
-    getSettings(),
+  const settings = await getSettings();
+  const week = currentWeek(settings.weekStart);
+  const [food, weekFoodDays, weighIns, weekWorkouts, lastTemplated] = await Promise.all([
     prisma.foodEntry.findMany({ where: { day: today } }),
     prisma.foodEntry.findMany({ where: { day: { gte: week[0] } }, select: { day: true }, distinct: ["day"] }),
     prisma.bodyWeight.findMany({ where: { day: { gte: daysAgoKey(29) } }, orderBy: { day: "asc" } }),

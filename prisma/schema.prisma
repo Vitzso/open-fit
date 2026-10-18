@@ -17,7 +17,8 @@ datasource db {
 /// Single-row table (id = 1) with goals and integration settings.
 model Settings {
   id            Int      @id @default(1)
-  weightUnit    String   @default("kg") // "kg" | "lb"
+  weightUnit    String   @default("kg") // "kg" | "lb"; also switches height to inches when "lb"
+  weekStart     Int      @default(0) // first day of the week: 0 = Sunday … 6 = Saturday
   calorieGoal   Int      @default(2000)
   proteinGoal   Int      @default(150)
   carbsGoal     Int      @default(200)
@@ -32,6 +33,7 @@ model Settings {
   ollamaBaseUrl String? // overrides OLLAMA_BASE_URL when set
   ollamaModel   String? // overrides OLLAMA_MODEL when set
   ollamaReasoning String? // "none" | "low" | "medium" | "high"; overrides OLLAMA_REASONING_EFFORT when set
+  coachInstructions String? // the user's own standing instructions for the AI coach
   updatedAt     DateTime @updatedAt
 }
 

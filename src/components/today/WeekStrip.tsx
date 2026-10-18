@@ -28,7 +28,7 @@ function Day({ day, state }: { day: string; state: DayState }) {
   );
 }
 
-/** This calendar week, Sunday to Saturday. Days after today are shown faded. */
+/** This calendar week, from the start day chosen in Settings. Days after today are shown faded. */
 export default function WeekStrip({ week, today, trainedDays, foodDays }: { week: string[]; today: string; trainedDays: Set<string>; foodDays: Set<string> }) {
   return (
     <section aria-label="This week" className="mb-8">
