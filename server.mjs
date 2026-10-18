@@ -3,9 +3,9 @@
 // secure origin, and `next start` cannot serve HTTPS by itself.
 import { spawn } from "node:child_process";
 import { createServer } from "node:https";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { networkInterfaces } from "node:os";
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
 
 const port = Number(process.env.PORT ?? 3443);
 const keyPath = process.env.TLS_KEY ?? "certs/key.pem";
@@ -22,10 +22,10 @@ if (!existsSync(keyPath) || !existsSync(certPath)) {
 // certificate, which Node doesn't trust by default ("unable to verify the first
 // certificate"). NODE_EXTRA_CA_CERTS adds our CA to Node's normal public ones,
 // but it's only read at startup, so relaunch once with it set.
-if (existsSync(caPath) && !process.env.NODE_EXTRA_CA_CERTS) {
+if (existsSync(caPath) && !process.env.OPENFIT_CA_LOADED) {
   const child = spawn(process.execPath, [...process.execArgv, ...process.argv.slice(1)], {
     stdio: "inherit",
-    env: { ...process.env, NODE_EXTRA_CA_CERTS: resolve(caPath) },
+    env: { ...process.env, NODE_EXTRA_CA_CERTS: extraCaBundle(caPath), OPENFIT_CA_LOADED: "1" },
   });
   for (const signal of ["SIGINT", "SIGTERM", "SIGBREAK"]) {
     process.on(signal, () => child.kill(signal === "SIGBREAK" ? "SIGTERM" : signal));
@@ -33,6 +33,23 @@ if (existsSync(caPath) && !process.env.NODE_EXTRA_CA_CERTS) {
   child.on("exit", (code, signal) => process.exit(code ?? (signal ? 1 : 0)));
 } else {
   await startServer();
+}
+
+/**
+ * The file to pass as NODE_EXTRA_CA_CERTS. Node reads only one file, so if it's
+ * already set (a company VPN or antivirus CA, for example), merge that CA with
+ * ours instead of skipping ours, which broke those internal requests.
+ */
+function extraCaBundle(ca) {
+  const existing = process.env.NODE_EXTRA_CA_CERTS;
+  if (!existing || resolve(existing) === resolve(ca)) return resolve(ca);
+  try {
+    const merged = resolve(dirname(ca), "node-extra-ca.pem");
+    writeFileSync(merged, `${readFileSync(existing, "utf8").trim()}\n${readFileSync(ca, "utf8")}`);
+    return merged;
+  } catch {
+    return resolve(ca); // unreadable existing bundle: trusting our own CA matters more here
+  }
 }
 
 async function startServer() {
