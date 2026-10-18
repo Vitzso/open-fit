@@ -12,6 +12,8 @@ import { weightSection } from "./sections/weight";
 
 export interface CoachContext {
   text: string;
+  /** The client's own standing instructions from Settings, if any. */
+  instructions: string | null;
   stats: {
     workouts7d: number;
     sets7d: number;
@@ -51,6 +53,7 @@ export async function buildCoachContext(): Promise<CoachContext> {
 
   return {
     text,
+    instructions: s.coachInstructions,
     stats: {
       workouts7d: training.sessions,
       sets7d: training.totalSets,

@@ -22,7 +22,7 @@ export async function POST() {
   try {
     const [s, context] = await Promise.all([getSettings(), buildCoachContext()]);
     const content = (
-      await chatCompletion([coachSystemMessage(context.text), { role: "user", content: NOTE_REQUEST }], {
+      await chatCompletion([coachSystemMessage(context), { role: "user", content: NOTE_REQUEST }], {
         ...coachOptions(s),
         temperature: 0.5,
       })

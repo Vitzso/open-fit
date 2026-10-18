@@ -17,13 +17,16 @@ export function lastNDays(n: number): string[] {
   return Array.from({ length: n }, (_, i) => daysAgoKey(n - 1 - i));
 }
 
-/** First day of the calendar week: 0 = Sunday, 1 = Monday. */
-export const WEEK_START = 0;
+/** Weekday names in JavaScript's getDay() order (0 = Sunday). */
+export const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"] as const;
 
-/** The 7 day keys of the current calendar week, starting on WEEK_START (includes days still to come). */
-export function currentWeek(from: Date = new Date()): string[] {
+/** Narrows a stored value to a weekday index 0–6, defaulting to Sunday. */
+export const asWeekStart = (v: number | null | undefined): number => (Number.isInteger(v) && v! >= 0 && v! <= 6 ? v! : 0);
+
+/** The 7 day keys of the current calendar week, starting on `weekStart` (0 = Sunday; includes days still to come). */
+export function currentWeek(weekStart = 0, from: Date = new Date()): string[] {
   const start = new Date(from);
-  start.setDate(start.getDate() - ((start.getDay() - WEEK_START + 7) % 7));
+  start.setDate(start.getDate() - ((start.getDay() - weekStart + 7) % 7));
   return Array.from({ length: 7 }, (_, i) => {
     const d = new Date(start);
     d.setDate(start.getDate() + i);

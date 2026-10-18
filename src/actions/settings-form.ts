@@ -1,25 +1,27 @@
 // Reads and validates the Settings form, and maps it to the database row.
 import { z } from "zod";
+import { COACH_INSTRUCTIONS_MAX } from "@/lib/coach/instructions";
 import { isValidModelName, validateOllamaUrl } from "@/lib/ollama";
-import { asUnit, fromDisplay } from "@/lib/units";
+import { asUnit, fromDisplay, heightFromDisplay } from "@/lib/units";
 import { optChoice, optDecimal } from "./schemas";
 
 const SettingsForm = z.object({
   weightUnit: z.enum(["kg", "lb"]),
+  weekStart: z.coerce.number().int().min(0).max(6),
   calorieGoal: z.coerce.number().int().min(800).max(10000),
   proteinGoal: z.coerce.number().int().min(0).max(1000),
   carbsGoal: z.coerce.number().int().min(0).max(2000),
   fatGoal: z.coerce.number().int().min(0).max(1000),
   goalWeight: optDecimal(1500),
-  // The unit the goal weight field was *displayed* in. Without this,
+  // The unit the goal weight and height fields were *displayed* in. Without this,
   // switching kg→lb in the same save turned "80 kg" into "80 lb".
-  goalWeightUnit: z.enum(["kg", "lb"]).optional(),
+  displayUnit: z.enum(["kg", "lb"]).optional(),
   sex: optChoice(["male", "female"]),
   birthYear: z.preprocess(
     (v) => (v === "" || v == null ? undefined : v),
     z.coerce.number().int().min(1920, "Check the birth year").max(new Date().getFullYear() - 13, "Check the birth year").optional(),
   ),
-  heightCm: optDecimal(250).refine((h) => h === undefined || h >= 100, "Height should be in centimetres, e.g. 178"),
+  height: optDecimal(250),
   activityLevel: optChoice(["sedentary", "light", "moderate", "very"]),
   weeklyLossPct: z.coerce.number().min(0).max(1),
   ollamaBaseUrl: z
@@ -33,6 +35,16 @@ const SettingsForm = z.object({
     .max(100)
     .refine((m) => m === "" || isValidModelName(m), "Invalid model name"),
   ollamaReasoning: optChoice(["none", "low", "medium", "high"]),
+  coachInstructions: z.string().trim().max(COACH_INSTRUCTIONS_MAX, `Coach instructions can be at most ${COACH_INSTRUCTIONS_MAX} characters`),
+}).superRefine((v, ctx) => {
+  // Height is typed in the unit it was displayed in (inches for lb users), like the goal weight.
+  if (v.height === undefined) return;
+  const shownIn = asUnit(v.displayUnit ?? v.weightUnit);
+  const cm = heightFromDisplay(v.height, shownIn);
+  if (cm < 100 || cm > 250) {
+    const message = shownIn === "lb" ? "Height should be in inches, e.g. 70" : "Height should be in centimetres, e.g. 178";
+    ctx.addIssue({ code: "custom", path: ["height"], message });
+  }
 });
 
 type SettingsFormData = z.output<typeof SettingsForm>;
@@ -42,20 +54,22 @@ function readFields(formData: FormData) {
   const f = (k: string) => formData.get(k) ?? undefined;
   return {
     weightUnit: f("weightUnit"),
+    weekStart: f("weekStart") ?? 0,
     calorieGoal: f("calorieGoal"),
     proteinGoal: f("proteinGoal"),
     carbsGoal: f("carbsGoal"),
     fatGoal: f("fatGoal"),
     goalWeight: f("goalWeight"),
-    goalWeightUnit: f("goalWeightUnit"),
+    displayUnit: f("displayUnit"),
     sex: f("sex") ?? "",
     birthYear: f("birthYear"),
-    heightCm: f("heightCm"),
+    height: f("height"),
     activityLevel: f("activityLevel") ?? "",
     weeklyLossPct: f("weeklyLossPct") ?? 0.6,
     ollamaBaseUrl: f("ollamaBaseUrl") ?? "",
     ollamaModel: f("ollamaModel") ?? "",
     ollamaReasoning: f("ollamaReasoning") ?? "",
+    coachInstructions: f("coachInstructions") ?? "",
   };
 }
 
@@ -66,18 +80,20 @@ function firstIssueMessage(error: z.ZodError): string {
   return issue?.code === "custom" ? issue.message : `Check "${field}": ${issue?.message ?? "invalid"}`;
 }
 
-/** Converts validated form values to the Settings row (kg, nulls for blanks). */
-function toSettingsRow({ goalWeight, goalWeightUnit, ...rest }: SettingsFormData) {
+/** Converts validated form values to the Settings row (kg and cm, nulls for blanks). */
+function toSettingsRow({ goalWeight, displayUnit, height, ...rest }: SettingsFormData) {
+  const shownIn = asUnit(displayUnit ?? rest.weightUnit);
   return {
     ...rest,
     sex: rest.sex ?? null,
     birthYear: rest.birthYear ?? null,
-    heightCm: rest.heightCm ?? null,
+    heightCm: height ? heightFromDisplay(height, shownIn) : null,
     activityLevel: rest.activityLevel ?? null,
-    goalWeightKg: goalWeight ? fromDisplay(goalWeight, asUnit(goalWeightUnit ?? rest.weightUnit)) : null,
+    goalWeightKg: goalWeight ? fromDisplay(goalWeight, shownIn) : null,
     ollamaBaseUrl: rest.ollamaBaseUrl ? validateOllamaUrl(rest.ollamaBaseUrl) : null,
     ollamaModel: rest.ollamaModel || null,
     ollamaReasoning: rest.ollamaReasoning ?? null,
+    coachInstructions: rest.coachInstructions || null,
   };
 }
 
