@@ -12,6 +12,21 @@ export function fromDisplay(value: number, unit: WeightUnit): number {
   return unit === "lb" ? value / LB_PER_KG : value;
 }
 
+const CM_PER_IN = 2.54;
+
+/** Height follows the weight unit: inches for lb users, centimetres otherwise. */
+export const heightUnit = (unit: WeightUnit): "cm" | "in" => (unit === "lb" ? "in" : "cm");
+
+/** Stored centimetres → the number shown in the height field. */
+export function heightToDisplay(cm: number, unit: WeightUnit): number {
+  return unit === "lb" ? cm / CM_PER_IN : cm;
+}
+
+/** The number typed in the height field → centimetres for storage. */
+export function heightFromDisplay(value: number, unit: WeightUnit): number {
+  return unit === "lb" ? value * CM_PER_IN : value;
+}
+
 export function round(n: number, digits = 1): number {
   const f = 10 ** digits;
   return Math.round(n * f) / f;
