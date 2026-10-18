@@ -1,0 +1,49 @@
+{
+  "name": "openfit",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "description": "Self-hosted workout, body-weight and nutrition tracker PWA with barcode scanning and a local Ollama AI coach.",
+  "scripts": {
+    "dev": "next dev -H 0.0.0.0",
+    "dev:https": "next dev -H 0.0.0.0 --experimental-https --experimental-https-key ./certs/key.pem --experimental-https-cert ./certs/cert.pem",
+    "build": "next build",
+    "start": "next start -H 0.0.0.0 --keepAliveTimeout 65000",
+    "start:https": "node server.mjs",
+    "typecheck": "tsc --noEmit",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:seed": "prisma db seed",
+    "db:studio": "prisma studio",
+    "postinstall": "prisma generate",
+    "make:icon": "node scripts/make-icon.mjs",
+    "make:shortcut": "pwsh -NoProfile -ExecutionPolicy Bypass -File launcher/create-shortcut.ps1",
+    "make:certs": "pwsh -NoProfile -ExecutionPolicy Bypass -File launcher/make-certs.ps1"
+  },
+  "overrides": {
+    "postcss": "^8.5.30",
+    "serialize-javascript": "^7.1.2",
+    "deepmerge-ts": "^8.0.2"
+  },
+  "dependencies": {
+    "@ducanh2912/next-pwa": "^10.2.9",
+    "@prisma/client": "^6.19.3",
+    "@zxing/browser": "^0.2.1",
+    "@zxing/library": "^0.23.0",
+    "lucide-react": "^1.59.0",
+    "next": "^15.5.28",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "server-only": "^0.0.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "prisma": "^6.19.3",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^5.7.0"
+  }
+}

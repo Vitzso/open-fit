@@ -1,0 +1,123 @@
+import { deleteBodyWeight, logBodyWeight } from "@/actions/weight";
+import OptimisticRow from "@/components/OptimisticRow";
+import PageHeader from "@/components/PageHeader";
+import WeightChart from "@/components/WeightChart";
+import { prisma } from "@/lib/db";
+import { dayKey, daysAgoKey, formatDay } from "@/lib/dates";
+import { getSettings } from "@/lib/settings";
+import { btnPrimary, card, input, label } from "@/lib/ui";
+import { round, toDisplay } from "@/lib/units";
+
+export const dynamic = "force-dynamic";
+
+/** One sentence about the last week's change, judged against a healthy fat-loss pace. */
+function trendSentence(deltaKg: number, fromKg: number, unit: string, deltaDisp: number) {
+  const pct = (deltaKg / fromKg) * 100;
+  const amount = `${Math.abs(round(deltaDisp, 1))} ${unit}`;
+  if (Math.abs(deltaDisp) < 0.1) return { text: "Same as last week.", tone: "text-muted" };
+  if (pct > 0) return { text: `Up ${amount} since last week.`, tone: "text-plate-yellow" };
+  if (pct < -1) return { text: `Down ${amount} since last week. That's faster than the 1% a week limit; consider eating a little more.`, tone: "text-plate-yellow" };
+  if (pct <= -0.5) return { text: `Down ${amount} since last week. A healthy pace: 0.5–1% a week is the sweet spot.`, tone: "text-plate-green" };
+  return { text: `Down ${amount} since last week. Slow and steady.`, tone: "text-plate-green" };
+}
+
+export default async function WeightPage() {
+  const [s, rows] = await Promise.all([
+    getSettings(),
+    prisma.bodyWeight.findMany({ where: { day: { gte: daysAgoKey(89) } }, orderBy: { day: "asc" } }),
+  ]);
+  const unit = s.weightUnit;
+  const disp = (kg: number) => round(toDisplay(kg, unit), 1);
+  const latest = rows.at(-1);
+  const weekAgo = [...rows].reverse().find((r) => r.day <= daysAgoKey(7));
+  const trend = latest && weekAgo ? trendSentence(latest.weightKg - weekAgo.weightKg, weekAgo.weightKg, unit, disp(latest.weightKg) - disp(weekAgo.weightKg)) : null;
+  const toGoal = latest && s.goalWeightKg ? disp(latest.weightKg) - disp(s.goalWeightKg) : null;
+
+  return (
+    <div style={{ "--accent": "var(--color-plate-yellow)" } as React.CSSProperties}>
+      <PageHeader title="Weight" section="weight" subtitle="Weigh in at the same time each morning for a fair trend." />
+
+      {latest && (
+      <section aria-label="Current weight" className="mb-6">
+        <p className="font-display leading-none font-bold">
+          <span className="text-[64px]">{disp(latest.weightKg)}</span>
+          <span className="ml-2 text-[24px] text-muted">{unit}</span>
+        </p>
+        <p className={`mt-2 text-[16px] leading-snug ${trend?.tone ?? "text-muted"}`}>
+          {trend ? trend.text : "Log another weigh-in next week to see your trend."}
+        </p>
+        {toGoal != null && (
+          <p className="mt-1 text-[15px] text-muted">
+            {Math.abs(toGoal) < 0.1 ? "You've reached your goal weight." : `${Math.abs(round(toGoal, 1))} ${unit} to your goal of ${disp(s.goalWeightKg!)} ${unit}.`}
+          </p>
+        )}
+        {rows.length >= 2 && (
+          <>
+            <div className="mt-4">
+              <WeightChart
+                points={rows.map((r) => ({ day: r.day, value: disp(r.weightKg) }))}
+                goal={s.goalWeightKg ? disp(s.goalWeightKg) : null}
+                unit={unit}
+              />
+            </div>
+            <p className="mt-1 text-sm text-faint">Dots are weigh-ins; the line is your 7-entry average{s.goalWeightKg ? "; dashed is your goal" : ""}.</p>
+          </>
+        )}
+      </section>
+      )}
+
+      <form action={logBodyWeight} className={`${card} mb-8`}>
+        <h2 className="mb-1 font-display text-xl font-semibold">{latest ? "Log a weigh-in" : "Log your first weigh-in"}</h2>
+        {!latest && <p className="mb-3 text-[15px] text-muted">After two weigh-ins you&apos;ll see your trend here.</p>}
+        {latest && <div className="mb-3" />}
+        <div className="grid grid-cols-2 gap-2.5">
+          <div>
+            <label htmlFor="weight" className={label}>
+              Weight ({unit})
+            </label>
+            <input
+              id="weight"
+              name="weight"
+              className={`${input} font-display text-xl`}
+              inputMode="decimal"
+              required
+              placeholder={latest ? String(disp(latest.weightKg)) : "0.0"}
+            />
+          </div>
+          <div>
+            <label htmlFor="date" className={label}>
+              Date
+            </label>
+            <input id="date" name="date" type="date" className={input} defaultValue={dayKey()} max={dayKey()} />
+          </div>
+        </div>
+        <button className={`${btnPrimary} mt-3 w-full`}>Save weigh-in</button>
+      </form>
+
+      <section aria-labelledby="history">
+        <h2 id="history" className="mb-1 font-display text-xl font-semibold">
+          History
+        </h2>
+        {rows.length === 0 ? (
+          <p className="text-[15px] text-faint">No weigh-ins in the last 90 days.</p>
+        ) : (
+          <ul className="divide-y divide-line">
+            {[...rows].reverse().map((r) => (
+              <OptimisticRow
+                key={r.id}
+                onDelete={deleteBodyWeight.bind(null, r.id)}
+                label={`Delete weigh-in from ${formatDay(r.day)}`}
+                className="flex items-center gap-3 py-1.5"
+              >
+                <span className="flex-1 text-[15px] text-muted">{r.day === dayKey() ? "Today" : formatDay(r.day)}</span>
+                <span className="font-display text-lg font-semibold">
+                  {disp(r.weightKg)} {unit}
+                </span>
+              </OptimisticRow>
+            ))}
+          </ul>
+        )}
+      </section>
+    </div>
+  );
+}

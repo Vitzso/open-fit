@@ -1,0 +1,11 @@
+# Store text with LF line endings in the repository.
+* text=auto eol=lf
+
+# Windows scripts keep CRLF so cmd.exe and Windows PowerShell 5.1 read them reliably.
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Binary assets.
+*.png binary
+*.jpg binary
+*.ico binary

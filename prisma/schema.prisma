@@ -1,0 +1,133 @@
+// OpenFit — SQLite schema.
+// Conventions:
+//   * `day` columns are local calendar dates as "YYYY-MM-DD" strings, which keeps
+//     "what did I eat today" queries free of timezone arithmetic.
+//   * All weights are stored in kilograms; the UI converts to lb when the user
+//     picks that unit in Settings.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+/// Single-row table (id = 1) with goals and integration settings.
+model Settings {
+  id            Int      @id @default(1)
+  weightUnit    String   @default("kg") // "kg" | "lb"
+  calorieGoal   Int      @default(2000)
+  proteinGoal   Int      @default(150)
+  carbsGoal     Int      @default(200)
+  fatGoal       Int      @default(65)
+  goalWeightKg  Float?
+  // Body profile, used to estimate calorie needs (all optional).
+  sex           String? // "male" | "female"
+  birthYear     Int?
+  heightCm      Float?
+  activityLevel String? // "sedentary" | "light" | "moderate" | "very"
+  weeklyLossPct Float    @default(0.6) // target fat-loss pace, % of body weight per week
+  ollamaBaseUrl String? // overrides OLLAMA_BASE_URL when set
+  ollamaModel   String? // overrides OLLAMA_MODEL when set
+  ollamaReasoning String? // "none" | "low" | "medium" | "high"; overrides OLLAMA_REASONING_EFFORT when set
+  updatedAt     DateTime @updatedAt
+}
+
+// ───────────── Workouts (openGym module) ─────────────
+
+model Exercise {
+  id          Int          @id @default(autoincrement())
+  name        String       @unique
+  muscleGroup String?
+  createdAt   DateTime     @default(now())
+  sets        WorkoutSet[]
+}
+
+model Workout {
+  id        Int          @id @default(autoincrement())
+  day        String
+  name       String?
+  notes      String?
+  templateId String? // id from src/lib/programs.ts when started from a ready-made workout
+  startedAt  DateTime     @default(now())
+  sets       WorkoutSet[]
+
+  @@index([day])
+}
+
+model WorkoutSet {
+  id         Int      @id @default(autoincrement())
+  workoutId  Int
+  workout    Workout  @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+  exerciseId Int
+  exercise   Exercise @relation(fields: [exerciseId], references: [id], onDelete: Restrict)
+  reps       Int
+  weightKg   Float    @default(0)
+  rpe        Float?
+  notes      String?
+  createdAt  DateTime @default(now())
+
+  @@index([workoutId])
+  @@index([exerciseId])
+}
+
+model BodyWeight {
+  id        Int      @id @default(autoincrement())
+  day       String   @unique
+  weightKg  Float
+  createdAt DateTime @default(now())
+}
+
+// ───────────── Nutrition (OpenNutriTracker module) ─────────────
+
+/// Cache of Open Food Facts lookups so re-scanning a product is instant/offline.
+model FoodProduct {
+  barcode          String   @id
+  name             String
+  brand            String?
+  imageUrl         String?
+  servingSize      String?
+  servingQuantityG Float?
+  kcal100g         Float
+  protein100g      Float
+  carbs100g        Float
+  fat100g          Float
+  nutritionComplete Boolean @default(true)
+  fetchedAt        DateTime @default(now())
+}
+
+model FoodEntry {
+  id        Int      @id @default(autoincrement())
+  day       String
+  meal      String   @default("snack") // breakfast | lunch | dinner | snack
+  name      String
+  brand     String?
+  barcode   String?
+  grams     Float?
+  calories  Float
+  protein   Float
+  carbs     Float
+  fat       Float
+  createdAt DateTime @default(now())
+
+  @@index([day])
+}
+
+// ───────────── AI coach ─────────────
+
+/// The coach's short note for a day, generated once and shown on Today.
+model CoachNote {
+  id        Int      @id @default(autoincrement())
+  day       String   @unique
+  content   String
+  createdAt DateTime @default(now())
+}
+
+model CoachMessage {
+  id        Int      @id @default(autoincrement())
+  role      String // "user" | "assistant"
+  content   String
+  createdAt DateTime @default(now())
+}

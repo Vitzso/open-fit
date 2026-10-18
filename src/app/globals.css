@@ -1,0 +1,107 @@
+@import "tailwindcss";
+
+/*
+ * OpenFit design tokens.
+ * Colours come from competition bumper plates (red 25 kg, blue 20, yellow 15,
+ * green 10, white 5). Each one has a fixed meaning across the app:
+ *   Today = white · Train = blue · Food = green · Weight = yellow · Coach = red
+ *   Macros: protein = red, carbs = yellow, fat = blue
+ * Surfaces are slate, not black, so coloured elements read clearly in a gym.
+ */
+@theme {
+  --color-ink: #15181d;
+  --color-surface: #1d2128;
+  --color-raised: #272c35;
+  --color-line: #323a45;
+  --color-fg: #eef1f5;
+  --color-muted: #a1aab6;
+  --color-faint: #6f7884;
+
+  --color-plate-red: #e5484d;
+  --color-plate-blue: #4a86f7;
+  --color-plate-yellow: #f2c335;
+  --color-plate-green: #34b46a;
+  --color-plate-white: #f4f5f7;
+
+  --font-sans: var(--font-barlow), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-barlow-condensed), var(--font-barlow), ui-sans-serif, sans-serif;
+
+  --radius-card: 1.25rem;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--color-ink);
+  color: var(--color-fg);
+  font-family: var(--font-sans);
+  overscroll-behavior-y: none;
+}
+
+/* Big numbers line up when they change. */
+.font-display {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.005em;
+}
+
+/* Taps fire immediately: no waiting to see whether it's a double-tap zoom. */
+a,
+button,
+label,
+summary,
+select {
+  touch-action: manipulation;
+}
+
+/* Visible keyboard focus everywhere, in the section's colour when set. */
+:focus-visible {
+  outline: 2px solid var(--accent, var(--color-plate-white));
+  outline-offset: 2px;
+  border-radius: 0.5rem;
+}
+
+/* iOS zooms into inputs with font-size < 16px. */
+input,
+select,
+textarea {
+  font-size: 16px;
+}
+
+@utility pt-safe {
+  padding-top: max(env(safe-area-inset-top), 0.75rem);
+}
+
+@utility pb-safe {
+  padding-bottom: max(env(safe-area-inset-bottom), 0.5rem);
+}
+
+@keyframes scanline {
+  0%,
+  100% {
+    top: 12%;
+  }
+  50% {
+    top: 88%;
+  }
+}
+
+.animate-scanline {
+  animation: scanline 2.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
