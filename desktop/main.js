@@ -211,9 +211,15 @@ function createWindow() {
   return win;
 }
 
-/** Keeps the window on OpenFit's own pages; any other link opens in the default browser. */
+/**
+ * Keeps the window on OpenFit's own pages; any other link opens in the default browser.
+ * localhost on the same port counts as our own: Next.js writes redirects (like the one to the
+ * passcode page) with "localhost" instead of 127.0.0.1, and unlocking then sent you to the browser.
+ */
 function lockNavigation(win, baseUrl) {
-  const isOwn = (url) => url === baseUrl || url.startsWith(`${baseUrl}/`);
+  const { port } = new URL(baseUrl);
+  const own = [baseUrl, `http://localhost:${port}`];
+  const isOwn = (url) => own.some((b) => url === b || url.startsWith(`${b}/`) || url.startsWith(`${b}?`));
   win.webContents.setWindowOpenHandler(({ url }) => {
     if (/^https?:/i.test(url) && !isOwn(url)) void shell.openExternal(url);
     return { action: "deny" };

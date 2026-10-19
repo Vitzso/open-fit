@@ -2,6 +2,14 @@
 
 All notable changes to OpenFit. Versions follow [Semantic Versioning](https://semver.org).
 
+## [0.1.5] - 2026-10-19
+
+### Fixed
+
+- **Desktop app: unlocking opened the browser.** After you typed the passcode, the dashboard opened in
+  your web browser (at `localhost`) instead of in the app. Next.js writes its redirect to the passcode
+  page with `localhost` rather than `127.0.0.1`, which the app treated as an outside link.
+
 ## [0.1.4] - 2026-10-19
 
 ### Added
