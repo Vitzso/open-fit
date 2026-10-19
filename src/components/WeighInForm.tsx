@@ -30,7 +30,7 @@ export default function WeighInForm({ unit, placeholder, first }: { unit: string
       <h2 className="mb-1 font-display text-xl font-semibold">{first ? "Log your first weigh-in" : "Log a weigh-in"}</h2>
       {first ? <p className="mb-3 text-[15px] text-muted">After two weigh-ins you&apos;ll see your trend here.</p> : <div className="mb-3" />}
       <div className="grid grid-cols-2 gap-2.5">
-        <div>
+        <div className="min-w-0">
           <label htmlFor="weight" className={label}>
             Weight ({unit})
           </label>
@@ -45,7 +45,7 @@ export default function WeighInForm({ unit, placeholder, first }: { unit: string
             onChange={(e) => setValue(e.target.value)}
           />
         </div>
-        <div>
+        <div className="min-w-0">
           <label htmlFor="date" className={label}>
             Date
           </label>

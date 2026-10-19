@@ -45,6 +45,22 @@ body {
   overscroll-behavior-y: none;
 }
 
+/* iOS Safari gives date and time fields their own minimum width and centred text, so in a narrow
+   column they burst out of the card. Keep them inside their box and left-aligned like other fields. */
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"],
+input[type="month"] {
+  min-width: 0;
+  max-width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+  text-align: left;
+}
+input::-webkit-date-and-time-value {
+  text-align: left;
+}
+
 /* Big numbers line up when they change. */
 .font-display {
   font-variant-numeric: tabular-nums;

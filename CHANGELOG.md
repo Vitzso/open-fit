@@ -2,6 +2,19 @@
 
 All notable changes to OpenFit. Versions follow [Semantic Versioning](https://semver.org).
 
+## [0.1.10] - 2026-10-20
+
+### Fixed
+
+- **"Can't reach your PC" on the phone after reinstalling OpenFit.** A fresh install made a new HTTPS
+  certificate authority, which the iPhone doesn't trust, so every request from the phone failed (the
+  screens still opened from the phone's saved copy, which hid the cause). This PC's certificate
+  authority is now also kept in your Windows profile (`%LOCALAPPDATA%\OpenFit\certificate-authority`,
+  never copied off the PC), and a new install or a fresh copy of OpenFit reuses it, so the phone keeps
+  trusting the PC. Only `make-certs.ps1 -NewAuthority` replaces it.
+- **The date box on the Weight screen ran past the card on iPhone.** Safari gives date fields their own
+  minimum width; date and time fields now stay inside their column and are left-aligned like the others.
+
 ## [0.1.9] - 2026-10-20
 
 ### Added

@@ -62,10 +62,24 @@ $tsNames = @($tsNames | Select-Object -Unique)
 
 $caKey = Join-Path $certs "rootCA-key.pem"
 $caCrt = Join-Path $certs "rootCA.pem"
+# This PC's certificate authority is also kept in your Windows profile (it never leaves this PC), so
+# a reinstall or a fresh copy of OpenFit reuses it: the iPhone trusts that one authority, and a new
+# one would make every request from the phone fail ("Can't reach your PC") until it's trusted again.
+$saved = Join-Path $env:LOCALAPPDATA "OpenFit\certificate-authority"
+$savedKey = Join-Path $saved "rootCA-key.pem"
+$savedCrt = Join-Path $saved "rootCA.pem"
+$fromSaved = $false
 $tmp = New-Item -ItemType Directory -Force (Join-Path ([IO.Path]::GetTempPath()) "openfit-certs-$PID")
 try {
     # 1. Certificate authority (only if there isn't a complete one yet, or -NewAuthority).
     $makeCa = $NewAuthority -or -not (Test-Path $caKey) -or -not (Test-Path $caCrt)
+    if ($makeCa -and -not $NewAuthority -and (Test-Path $savedKey) -and (Test-Path $savedCrt) -and
+        (Invoke-OpenSsl $openssl @("x509", "-in", $savedCrt, "-noout", "-checkend", "0")).ExitCode -eq 0) {
+        Copy-Item $savedKey $caKey -Force
+        Copy-Item $savedCrt $caCrt -Force
+        $makeCa = $false
+        $fromSaved = $true
+    }
     if (-not $makeCa -and (Invoke-OpenSsl $openssl @("x509", "-in", $caCrt, "-noout", "-checkend", "0")).ExitCode -ne 0) {
         Write-Host "The certificate authority has expired; making a new one." -ForegroundColor Yellow
         $makeCa = $true
@@ -89,7 +103,8 @@ subjectKeyIdentifier = hash
             "-keyout", "$tmp\rootCA-key.pem", "-out", "$tmp\rootCA.pem", "-config", "$tmp\ca.cnf")
         $signCa = "$tmp\rootCA.pem"; $signKey = "$tmp\rootCA-key.pem"
     } else {
-        Write-Host "Reusing existing certificate authority: certs\rootCA.pem"
+        if ($fromSaved) { Write-Host "Reusing this PC's certificate authority from an earlier OpenFit install: your iPhone already trusts it." }
+        else { Write-Host "Reusing existing certificate authority: certs\rootCA.pem" }
         $signCa = $caCrt; $signKey = $caKey
     }
 
@@ -127,6 +142,12 @@ subjectKeyIdentifier = hash
     }
     Copy-Item "$tmp\key.pem" (Join-Path $certs "key.pem") -Force
     Copy-Item "$tmp\cert.pem" (Join-Path $certs "cert.pem") -Force
+    # Keep the authority in use as this PC's (see $saved above).
+    if (-not (Test-Path $savedCrt) -or (Get-FileHash $savedCrt).Hash -ne (Get-FileHash $caCrt).Hash) {
+        New-Item -ItemType Directory -Force $saved | Out-Null
+        Copy-Item $caKey $savedKey -Force
+        Copy-Item $caCrt $savedCrt -Force
+    }
     Write-Host "Created server certificate for: $($san -join ', ')"
     Write-Host ""
     Write-Host "Keep certs\rootCA-key.pem private. Never copy it off this PC." -ForegroundColor Yellow
