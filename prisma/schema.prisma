@@ -127,6 +127,15 @@ model CoachNote {
   createdAt DateTime @default(now())
 }
 
+/// Progress reports written for the desktop dashboard, newest last. Kept so the
+/// dashboard opens instantly with the latest one and you can compare over time.
+model CoachReport {
+  id        Int      @id @default(autoincrement())
+  rangeDays Int // how many days of data the report looked at
+  content   String
+  createdAt DateTime @default(now())
+}
+
 model CoachMessage {
   id        Int      @id @default(autoincrement())
   role      String // "user" | "assistant"

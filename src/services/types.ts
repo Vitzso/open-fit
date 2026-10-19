@@ -83,3 +83,10 @@ export type SelfTestEvent =
   | { type: "start"; total: number }
   | ({ type: "case" } & SelfTestCase)
   | { type: "done"; passed: number; total: number };
+
+export interface CoachReportData {
+  id: number;
+  rangeDays: number;
+  content: string;
+  createdAt: string;
+}

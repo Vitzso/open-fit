@@ -1,6 +1,7 @@
 // Renders the OpenFit app icon (same design as src/lib/icon.tsx) into a
-// multi-size Windows .ico for the desktop launcher.
+// multi-size Windows .ico for the desktop launcher, and the desktop app's icons.
 //   node scripts/make-icon.mjs   →   launcher/openfit.ico (+ openfit.png preview)
+//                                    desktop/build/icon.ico + icon.png (1024 px, macOS needs 512+)
 import { mkdirSync, writeFileSync } from "node:fs";
 import { createElement as h } from "react";
 import { ImageResponse } from "next/og.js";
@@ -69,3 +70,9 @@ mkdirSync("launcher", { recursive: true });
 writeFileSync("launcher/openfit.ico", packIco(images));
 writeFileSync("launcher/openfit.png", images.at(-1).png);
 console.log(`launcher/openfit.ico written (${SIZES.join(", ")} px)`);
+
+// The desktop app (desktop/): electron-builder picks these up from desktop/build.
+mkdirSync("desktop/build", { recursive: true });
+writeFileSync("desktop/build/icon.ico", packIco(images));
+writeFileSync("desktop/build/icon.png", await renderPng(1024));
+console.log("desktop/build/icon.ico and icon.png written");

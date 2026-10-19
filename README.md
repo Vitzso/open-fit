@@ -7,6 +7,8 @@ A self-hosted, subscription-free fitness PWA for your iPhone. It combines:
 - **Nutrition logging** (OpenNutriTracker-style): calories and macros, with a **camera barcode scanner**
   backed by the free Open Food Facts API
 - **A local AI coach** running on your own PC through **Ollama**, which reads your last 7 days of data
+- **A desktop app for Windows and Mac** (`desktop/`): a big-screen dashboard with progress charts
+  for weight, food and training, and AI coach progress reports ([SETUP.md](SETUP.md#desktop-app-windows-and-mac-your-progress-on-a-big-screen))
 
 All data lives in a SQLite file on your PC. **→ See [SETUP.md](SETUP.md) to get it running on your phone.**
 
