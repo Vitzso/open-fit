@@ -7,11 +7,10 @@ $Root = Split-Path -Parent $PSScriptRoot
 Set-Location $Root
 $Host.UI.RawUI.WindowTitle = "OpenFit server"
 
-# Shared helpers (Say, Test-Url, Test-Command, Update-SessionPath, Test-InstallNeeded, Test-BuildNeeded…).
-. (Join-Path $PSScriptRoot "setup\common.ps1")
-. (Join-Path $PSScriptRoot "setup\app.ps1")
-. (Join-Path $PSScriptRoot "setup\git.ps1")
-. (Join-Path $PSScriptRoot "setup\certs.ps1")
+# Shared helpers (Say, Test-Url, Test-NodeReady, Test-InstallNeeded, Test-BuildNeeded, Initialize-Certs...).
+foreach ($part in "common", "node", "app", "git", "certs", "ollama") {
+    . (Join-Path $PSScriptRoot "setup\$part.ps1")
+}
 
 # Shows an error and keeps the window open so it can be read.
 function Fail($msg) {
@@ -28,8 +27,13 @@ Write-Host ""
 Write-Host "  OpenFit" -ForegroundColor Green
 Write-Host ""
 
-# HTTPS (needed for the iPhone's live camera) if mkcert certificates exist.
-$https = (Test-Path "certs\key.pem") -and (Test-Path "certs\cert.pem")
+# HTTPS (needed for the iPhone's live camera) when certificates exist. Initialize-Certs re-issues
+# them first if they expired, the PC's address changed, or key.pem and cert.pem don't match
+# (starting the server with a mismatched pair would crash it).
+$https = $false
+if ((Test-Path "certs\key.pem") -or (Test-Path "certs\cert.pem")) {
+    $https = (Initialize-Certs $Root) -and (Test-Path "certs\key.pem") -and (Test-Path "certs\cert.pem")
+}
 $port = if ($https) { 3443 } else { 3000 }
 $scheme = if ($https) { "https" } else { "http" }
 $localUrl = "${scheme}://localhost:$port"
@@ -43,13 +47,13 @@ if (Test-Port $port) {
 }
 
 # 1. First run (or something essential missing): run the one-click setup, then carry on.
-if (-not (Test-Command node) -or -not (Test-Path ".env") -or -not (Test-Path "node_modules")) {
+if (-not (Test-NodeReady) -or -not (Test-Path ".env") -or -not (Test-Path "node_modules")) {
     Say "First run: setting everything up." Yellow
     & (Join-Path $PSScriptRoot "setup.ps1") -FromLauncher
     Update-SessionPath
     Set-Location $Root
     $Host.UI.RawUI.WindowTitle = "OpenFit server"
-    if (-not (Test-Command node)) { Fail "Node.js isn't installed. Get it from https://nodejs.org and run this again." }
+    if (-not (Test-NodeReady)) { Fail "Node.js $MinNodeVersion or newer isn't installed. Get it from https://nodejs.org and run this again." }
     # Certificates may have been created just now.
     $https = (Test-Path "certs\key.pem") -and (Test-Path "certs\cert.pem")
     $port = if ($https) { 3443 } else { 3000 }
@@ -61,24 +65,18 @@ if (Test-InstallNeeded $Root) {
     npm install --no-fund --no-audit
     if ($LASTEXITCODE -ne 0) { Fail "npm install failed (see above)." }
 }
-
-# PC got a new IP (new router, other network)? Refresh the certificate so the phone still connects.
-if ($https) {
-    $missing = Get-UncoveredAddresses $Root
-    if ($missing.Count -gt 0) {
-        Say "New address detected ($($missing -join ', ')); updating the HTTPS certificate..." Yellow
-        Invoke-MakeCerts $Root | Out-Null
-    }
+if (Test-PrismaClientStale $Root) {
+    if (-not (Invoke-Quiet "Preparing the database client" { npx prisma generate })) { Fail "Preparing the database client failed." }
 }
 
 # 2. Database
 Say "Checking database..."
-# Capture everything Prisma prints: it writes routine info ("Loaded Prisma config…")
+# Capture everything Prisma prints: it writes routine info ("Loaded Prisma config...")
 # to stderr. Show it only if the command actually fails. EAP must be Continue here,
 # or Windows PowerShell 5.1 turns any native stderr line into a terminating error.
 $ErrorActionPreference = "Continue"
 $prismaOut = npx prisma migrate deploy 2>&1 | ForEach-Object {
-    # 5.1 wraps stderr lines in ErrorRecords; a blank one stringifies as "…RemoteException".
+    # 5.1 wraps stderr lines in ErrorRecords; a blank one stringifies as "...RemoteException".
     if ($_ -is [System.Management.Automation.ErrorRecord]) { $_.Exception.Message } else { "$_" }
 }
 $prismaExit = $LASTEXITCODE
@@ -89,19 +87,14 @@ if ($prismaExit -ne 0) {
 }
 
 # 3. Ollama (the AI coach): start the tray app if it isn't running.
-if (Test-Url "http://127.0.0.1:11434/api/version") {
+if (Test-Url "$OllamaApi/api/version") {
     Say "Ollama is running." Green
+} elseif (Test-OllamaInstalled) {
+    Say "Starting Ollama..."
+    if (Start-Ollama 20) { Say "Ollama is running." Green }
+    else { Say "Ollama didn't start. Everything except the AI coach will work." Yellow }
 } else {
-    $ollamaApp = Join-Path $env:LOCALAPPDATA "Programs\Ollama\ollama app.exe"
-    if (Test-Path $ollamaApp) {
-        Say "Starting Ollama..."
-        Start-Process $ollamaApp
-        for ($i = 0; $i -lt 20 -and -not (Test-Url "http://127.0.0.1:11434/api/version"); $i++) { Start-Sleep 1 }
-        if (Test-Url "http://127.0.0.1:11434/api/version") { Say "Ollama is running." Green }
-        else { Say "Ollama didn't start. Everything except the AI coach will work." Yellow }
-    } else {
-        Say "Ollama isn't installed. Everything except the AI coach will work." Yellow
-    }
+    Say "Ollama isn't installed. Everything except the AI coach will work." Yellow
 }
 
 # 4. Build only when the code changed since the last build (check shared with setup).

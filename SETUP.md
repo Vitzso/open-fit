@@ -14,6 +14,11 @@ skips whatever is already done, so it's also the "repair" button:
 7. HTTPS certificates
 8. The OpenFit shortcut on your Desktop
 
+Something acting up (the app won't start, HTTPS stopped working, you moved the folder)?
+Double-click **`Validate.cmd`** (or run `npm run validate`). It checks that the settings file,
+packages, database, build, certificates and shortcuts all agree with each other and fixes
+whatever doesn't. Add `-CheckOnly` (`pwsh -File launcher\validate.ps1 -CheckOnly`) to only report.
+
 The **OpenFit** shortcut runs this setup automatically the first time, so on a new PC
 one double-click is enough. In the app, **Settings → Setup** shows what's ready and can
 download the coach model with one tap.
