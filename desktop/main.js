@@ -4,10 +4,10 @@
 // food and training, plus the AI coach's progress report. Logging stays on the phone app.
 // On Windows it also installs OpenFit itself (shipped inside the installer) and runs its Setup.
 // Choices before the dashboard (install, update, errors) are screens in the window (setup.html).
-const { app, BrowserWindow, dialog, ipcMain, shell } = require("electron");
+const { app, BrowserWindow, clipboard, dialog, ipcMain, Menu, nativeImage, shell, Tray } = require("electron");
 const fs = require("node:fs");
 const path = require("node:path");
-const { isOpenFitDir, setupProblem, startServer } = require("./server");
+const { isOpenFitDir, setupProblem, startPhoneServer, startServer, stopTree } = require("./server");
 const {
   bundledDir,
   defaultInstallDir,
@@ -72,6 +72,7 @@ function show(win, screen) {
 function ask(win, screen) {
   return new Promise((resolve) => {
     pendingChoice = resolve;
+    if (!win.isVisible()) showWindow(win); // started hidden, but something needs an answer
     show(win, screen);
   });
 }
@@ -266,10 +267,13 @@ async function fail(win, title, text, detail) {
   app.quit();
 }
 
-// ── The window and the dashboard ──
+// ── The window, the server and the tray ──
 
 let server = null;
 let quitting = false;
+let tray = null;
+// Started with Windows (Start with Windows passes --hidden): run in the tray until opened.
+const startHidden = process.argv.includes("--hidden");
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -278,6 +282,7 @@ function createWindow() {
     minWidth: 1024,
     minHeight: 680,
     title: "OpenFit",
+    show: !startHidden,
     backgroundColor: "#15181d",
     autoHideMenuBar: true,
     icon: path.join(__dirname, "build", "icon.png"),
@@ -285,17 +290,72 @@ function createWindow() {
   });
   void loadSetupUi(win);
   status(win, "Opening OpenFit…");
+  // Closing the window keeps OpenFit running in the tray, so your phone can still reach it.
+  win.on("close", (e) => {
+    if (quitting || !tray) return;
+    e.preventDefault();
+    win.hide();
+    if (!readConfig().trayHintShown && process.platform === "win32") {
+      tray.displayBalloon({
+        iconType: "info",
+        title: "OpenFit is still running",
+        content: "Your phone can keep using it. To stop OpenFit, right-click its icon here and choose Quit.",
+      });
+      writeConfig({ ...readConfig(), trayHintShown: true });
+    }
+  });
   return win;
+}
+
+function showWindow(win) {
+  if (win.isMinimized()) win.restore();
+  win.show();
+  win.focus();
+}
+
+/** True when OpenFit starts with Windows (in the tray). */
+const startsWithWindows = () => app.getLoginItemSettings({ args: ["--hidden"] }).openAtLogin;
+
+/** The tray icon: open the dashboard, your phone's addresses (click to copy), Start with Windows, Quit. */
+function createTray(win) {
+  const icon = nativeImage.createFromPath(path.join(__dirname, "build", "icon.png")).resize({ width: 16, height: 16 });
+  tray = new Tray(icon);
+  tray.setToolTip("OpenFit is running: your phone can connect");
+  const build = () =>
+    Menu.buildFromTemplate([
+      { label: "Open OpenFit", click: () => showWindow(win) },
+      { type: "separator" },
+      ...(server.phoneUrls?.length
+        ? [
+            { label: "On your phone (click to copy):", enabled: false },
+            ...server.phoneUrls.map((p) => ({ label: `${p.url}  (${p.label})`, click: () => clipboard.writeText(p.url) })),
+            { type: "separator" },
+          ]
+        : []),
+      {
+        label: "Start with Windows",
+        type: "checkbox",
+        checked: startsWithWindows(),
+        click: (item) => {
+          app.setLoginItemSettings({ openAtLogin: item.checked, args: ["--hidden"] });
+          tray.setContextMenu(build());
+        },
+      },
+      { type: "separator" },
+      { label: server.child ? "Quit OpenFit (stops it for your phone too)" : "Quit OpenFit", click: () => app.quit() },
+    ]);
+  tray.setContextMenu(build());
+  tray.on("click", () => showWindow(win));
 }
 
 /**
  * Keeps the window on OpenFit's own pages; any other link opens in the default browser.
- * localhost on the same port counts as our own: Next.js writes redirects (like the one to the
- * passcode page) with "localhost" instead of 127.0.0.1, and unlocking then sent you to the browser.
+ * localhost and 127.0.0.1 on the same port count as our own: Next.js writes redirects (like the one
+ * to the passcode page) with "localhost", and unlocking then sent you to the browser.
  */
 function lockNavigation(win, baseUrl) {
-  const { port } = new URL(baseUrl);
-  const own = [baseUrl, `http://localhost:${port}`];
+  const { protocol, port } = new URL(baseUrl);
+  const own = [baseUrl, `${protocol}//localhost:${port}`, `${protocol}//127.0.0.1:${port}`];
   const isOwn = (url) => own.some((b) => url === b || url.startsWith(`${b}/`) || url.startsWith(`${b}?`));
   win.webContents.setWindowOpenHandler(({ url }) => {
     if (/^https?:/i.test(url) && !isOwn(url)) void shell.openExternal(url);
@@ -305,6 +365,30 @@ function lockNavigation(win, baseUrl) {
     if (isOwn(url)) return;
     e.preventDefault();
     if (/^https?:/i.test(url)) void shell.openExternal(url);
+  });
+}
+
+/**
+ * The phone server uses OpenFit's own HTTPS certificate (from its local CA, which Windows doesn't
+ * know). The window accepts exactly that certificate, and only from this PC's own server.
+ */
+function trustOwnCertificate(dir, baseUrl) {
+  const { port } = new URL(baseUrl);
+  const norm = (pem) => pem.replace(/\r/g, "").trim();
+  let ours = null;
+  try {
+    ours = norm(fs.readFileSync(path.join(dir, "certs", "cert.pem"), "utf8"));
+  } catch {
+    return;
+  }
+  app.on("certificate-error", (event, _webContents, url, _error, certificate, callback) => {
+    const u = new URL(url);
+    if (["localhost", "127.0.0.1"].includes(u.hostname) && u.port === port && norm(certificate.data) === ours) {
+      event.preventDefault();
+      callback(true);
+    } else {
+      callback(false);
+    }
   });
 }
 
@@ -334,39 +418,42 @@ async function main() {
   const proTraining = update.updated ? update.proTraining : found.proTraining;
   if (!(await ensureReady(win, dir, found.installed || update.updated, proTraining))) return app.quit();
 
-  status(win, "Opening your progress…");
+  status(win, "Starting OpenFit…", "Your phone can connect as soon as it's running.");
   try {
-    server = await startServer(dir);
+    // Windows: the server your phone uses, so this app is all you need to start. Elsewhere: a private one.
+    server = process.platform === "win32" ? await startPhoneServer(dir) : await startServer(dir);
   } catch (err) {
     return fail(win, "OpenFit couldn't start", err.message, (err.log ?? []).slice(-12).join("\n"));
   }
-  server.child.on("exit", (code) => {
+  server.child?.on("exit", (code) => {
     if (!quitting) void fail(win, "The OpenFit server stopped unexpectedly", `Exit code ${code}.`, server.log.slice(-12).join("\n"));
   });
 
+  trustOwnCertificate(dir, server.url);
   lockNavigation(win, server.url);
+  createTray(win);
   maybeScreenshot(win);
   const range = process.env.OPENFIT_RANGE ? `?range=${encodeURIComponent(process.env.OPENFIT_RANGE)}` : "";
   await win.loadURL(`${server.url}/desktop${range}`);
 }
 
+/** Stops the server this app started (one that was already running is left alone). */
 function stopServer() {
   quitting = true;
-  if (server?.child && server.child.exitCode === null) server.child.kill();
+  stopTree(server?.child);
 }
 
 if (!app.requestSingleInstanceLock()) {
   app.quit();
 } else {
+  // Opening OpenFit again (its shortcut) brings back the window, even from the tray.
   app.on("second-instance", () => {
     const [win] = BrowserWindow.getAllWindows();
-    if (win) {
-      if (win.isMinimized()) win.restore();
-      win.focus();
-    }
+    if (win) showWindow(win);
   });
   app.whenReady().then(main);
-  // One window and its own server: closing the window quits the app (on macOS too).
+  // Closing the window hides it while the tray icon exists (see createWindow); before that (setup
+  // cancelled, an error) closing it quits.
   app.on("window-all-closed", () => app.quit());
   app.on("before-quit", stopServer);
 }

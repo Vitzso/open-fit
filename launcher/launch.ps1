@@ -1,7 +1,10 @@
 # OpenFit launcher: double-click OpenFit.lnk (or OpenFit.cmd) to start everything.
 # Close this window to stop the server.
 #   -NoBrowser   start without opening a browser tab (e.g. for autostart at log-on)
-param([switch]$NoBrowser)
+#   -Headless    run by the OpenFit desktop app in a hidden window: no browser and no questions; it reads
+#                the OPENFIT-URL / OPENFIT-PHONE / OPENFIT-READY / OPENFIT-ERROR lines this prints
+param([switch]$NoBrowser, [switch]$Headless)
+if ($Headless) { $NoBrowser = $true }
 $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent $PSScriptRoot
 Set-Location $Root
@@ -13,8 +16,9 @@ foreach ($part in "common", "node", "app", "modules", "git", "remote", "certs", 
 }
 Disable-QuickEdit
 
-# Shows an error and keeps the window open so it can be read.
+# Shows an error and keeps the window open so it can be read (or, for the desktop app, reports it).
 function Fail($msg) {
+    if ($Headless) { Write-Output "OPENFIT-ERROR $msg"; exit 1 }
     Write-Host ""; Say $msg Red
     Read-Host "  Press Enter to close"
     exit 1
@@ -41,6 +45,7 @@ $localUrl = "${scheme}://localhost:$port"
 
 # Already running? Just open it.
 if (Test-Port $port) {
+    if ($Headless) { Write-Output "OPENFIT-READY $localUrl"; exit 0 }
     Say "Already running at $localUrl" Green
     if (-not $NoBrowser) { Start-Process $localUrl }
     Start-Sleep 2
@@ -49,6 +54,7 @@ if (Test-Port $port) {
 
 # 1. First run (or something essential missing): run the one-click setup, then carry on.
 if (-not (Test-NodeReady) -or -not (Test-Path ".env") -or -not (Test-Path "node_modules")) {
+    if ($Headless) { Fail "OpenFit isn't set up yet: run Setup." }
     Say "First run: setting everything up." Yellow
     & (Join-Path $PSScriptRoot "setup.ps1") -FromLauncher
     Update-SessionPath
@@ -138,6 +144,11 @@ if ($remoteCfg.Provider -ne "none") {
     elseif ($remoteCfg.Explicit) { Say "($($remoteCfg.Label) isn't connected, so OpenFit works on home Wi-Fi only right now.)" DarkGray }
 }
 if (-not $https) { Say "(Live barcode scanning on iPhone needs HTTPS: see SETUP.md step 6.)" DarkGray }
+if ($Headless) {
+    Write-Output "OPENFIT-URL $localUrl"
+    foreach ($ip in $lanIps) { Write-Output "OPENFIT-PHONE ${scheme}://${ip}:$port home Wi-Fi" }
+    if ($remoteCfg.Provider -ne "none" -and $away) { Write-Output "OPENFIT-PHONE ${scheme}://${away}:$port $($remoteCfg.Label)" }
+}
 Write-Host ""
 Say "Close this window to stop OpenFit." Yellow
 Write-Host ""

@@ -59,8 +59,8 @@ Step 8 $total "HTTPS certificates"
 $results["HTTPS"] = Initialize-Certs $Root
 
 Step 9 $total "Desktop shortcut"
-# Run from the desktop app: name it so it reads clearly next to the app's "OpenFit Dashboard" shortcut.
-$results["Shortcut"] = if ($FromDesktop) { Install-Shortcut $Root "OpenFit server" } else { Install-Shortcut $Root }
+# Run from the desktop app: the app runs OpenFit (and is the Desktop shortcut), so no second one.
+$results["Shortcut"] = if ($FromDesktop) { Say "The OpenFit app is your shortcut: it runs OpenFit for your phone too." Green; $true } else { Install-Shortcut $Root }
 
 if ($ollama.Pull -and -not $ollama.Pull.HasExited) {
     Write-Host ""
@@ -77,8 +77,8 @@ Write-Host ""
 
 if ($FromLauncher) { return }
 if ($FromDesktop) {
-    Say "To use OpenFit on your phone, start it with the ""OpenFit server"" shortcut on your Desktop."
-    Read-Host "  Press Enter to close this window and open the OpenFit app"
+    Say "The OpenFit app runs OpenFit for your phone too: keep it open, or in the tray (closing its window keeps it running)."
+    Read-Host "  Press Enter to close this window and open OpenFit"
     return
 }
 if (Ask-YesNo "Start OpenFit now?" $true) {

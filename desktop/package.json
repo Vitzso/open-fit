@@ -1,6 +1,6 @@
 {
   "name": "openfit-desktop",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "private": true,
   "license": "MIT",
   "description": "OpenFit progress dashboard for Windows and macOS: charts and AI coach reports from your local OpenFit database.",
@@ -46,7 +46,7 @@
       "oneClick": true,
       "perMachine": false,
       "runAfterFinish": true,
-      "shortcutName": "OpenFit Dashboard",
+      "shortcutName": "OpenFit",
       "artifactName": "${productName}-Setup-${version}.${ext}"
     },
     "mac": {

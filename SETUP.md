@@ -13,8 +13,9 @@ folder, the app finds that itself). When the app first opens:
   if you want the exercise library, personal records and the rest of the module.
 
 Setup then opens in its own window for the steps below and shows your dashboard when it's done.
-The app is the **OpenFit Dashboard** shortcut; start the phone app with the **OpenFit server**
-shortcut Setup adds.
+After that, the **OpenFit** app is all you start: it runs the server your phone uses, and closing its
+window keeps it running in the tray (right-click the tray icon for your phone's addresses, **Start with
+Windows** and **Quit**).
 
 **Or by hand:** double-click **`Setup.cmd`** in the OpenFit folder. It installs whatever is missing and
 skips whatever is already done, so it's also the "repair" button. Its questions all come first;
@@ -283,10 +284,17 @@ If you denied camera access by mistake, go to Settings → Apps → Safari → C
 - **Settings** (gear icon on Today): goals, kg/lb, goal weight, Ollama address, model and
   thinking level (with a **Test connection** button), and a **Setup** checklist with your phone addresses.
 
-Keep the server running whenever you want to use the app. To start it automatically, see
-`pm2` or Windows Task Scheduler running `npm run start:https` at log-on.
+Keep OpenFit running whenever you want to use the phone app. On Windows the desktop app does that:
+it runs the server, stays in the tray when you close its window, and with **Start with Windows**
+(tray icon menu) starts hidden when you sign in. Without the desktop app, double-click `OpenFit.cmd`,
+or run `npm run start:https` at log-on with Task Scheduler or `pm2`.
 
 ## Logging with no signal
+
+The phone keeps a copy of the app and of your main screens (Today, Food, Add food, Train, Weight,
+Coach, Settings), refreshed in the background whenever it can reach the PC. With no signal, or away
+from home without your VPN, the app opens from that copy in a couple of seconds and shows your data as
+of the last refresh, instead of waiting for the PC.
 
 Everything you log on the phone (food, sets, weigh-ins) is saved on the phone first and sent to the
 PC in the background. In a gym basement, on a plane, or while the PC sleeps, just keep logging: a pill
@@ -342,9 +350,14 @@ Pick 7 days, 30 days, 3 months, 6 months or 1 year at the top; every chart, numb
 report use that range. Hover a chart (or focus it and use the arrow keys) to read exact
 values, or open **Show as table** under it.
 
-It reads the same database as the phone app: it runs OpenFit's own server from your OpenFit
-folder on a private `127.0.0.1` port (never reachable from your network), so nothing is
-copied or synced, and it works whether or not the phone server is running.
+It reads the same database as the phone app, so nothing is copied or synced. On Windows it
+*is* the phone app's server: opening it starts OpenFit (the same way `OpenFit.cmd` does, in a
+hidden window), and closing its window keeps it running in the tray, so your phone can keep
+connecting. The tray icon's menu shows your phone's addresses (click one to copy it), has
+**Start with Windows** (OpenFit then starts hidden in the tray when you sign in) and **Quit**,
+which stops OpenFit for the phone too. If OpenFit was already running when you opened the
+app, the app uses it and leaves it running when you quit. On a Mac the app runs its own
+private server on `127.0.0.1` instead; start the phone server separately there.
 
 **Run it from the OpenFit folder** (after Setup, so the app is installed and built):
 
@@ -365,8 +378,8 @@ On Windows the installer includes OpenFit itself. On a PC without OpenFit the ap
 install it (choose **I already have OpenFit** to pick an existing folder instead), then runs
 Setup in its own window and opens when Setup is done. If packages or the build go missing
 later, it offers to run Setup again. Installing a newer `OpenFit-Setup` updates the OpenFit
-folder and keeps your data (`.env`, the database, `data/`, `certs/`): close the **OpenFit
-server** window first. A git checkout is never overwritten; update it with `git pull`.
+folder and keeps your data (`.env`, the database, `data/`, `certs/`): quit OpenFit first
+(tray icon, **Quit**, or close its server window if you started it with `OpenFit.cmd`). A git checkout is never overwritten; update it with `git pull`.
 `npm run dist:win` bundles the committed files (`npm run bundle -- --working-tree` includes
 uncommitted edits, for testing).
 
@@ -434,5 +447,6 @@ The PC still has to be on with the launcher running. A Home Screen icon added fr
 | Coach: "Model … is not installed" | `ollama pull <model>`, or choose one of the listed models in Settings. |
 | Coach: "did not respond in time" | The model is still loading (the first request after a restart can take 30–90 s on CPU), or it's too large for your hardware. Try a 7–8B model. |
 | Barcode "not found" | The product isn't in Open Food Facts yet. Add it manually (the form opens with the barcode filled in), and consider contributing it at openfoodfacts.org. |
-| Phone says "Can't reach your PC" while the PC is on | The OpenFit server isn't running: start it with the OpenFit (or **OpenFit server**) shortcut and keep its window open. Older versions froze when you clicked inside that window (a Windows text selection pauses it until you press Esc); 0.1.4 turns that off. |
+| Phone says "Can't reach your PC" while the PC is on | OpenFit isn't running: open the **OpenFit** app (it keeps running in the tray when you close its window; tick **Start with Windows** in the tray menu to have it always on), or double-click `OpenFit.cmd`. Older versions froze when you clicked inside the server window (a Windows text selection pauses it until you press Esc); 0.1.4 turns that off. |
+| Phone app opens slowly or shows old data away from home | It can't reach the PC (no signal, or your VPN app is off), so after about 2 seconds it shows the copy saved on the phone. What you log is kept on the phone and sent when the PC is reachable again. |
 | `spawn … schema-engine-windows.exe ENOENT` | The project path is too long. Move it to a short path like `C:\dev\openfit`. |

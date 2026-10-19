@@ -124,6 +124,8 @@ export function flush(): Promise<FlushResult> {
             headers: { "content-type": "application/json" },
             credentials: "same-origin",
             cache: "no-store",
+            // Away from home a request to the PC can hang instead of failing: give up and retry later.
+            signal: AbortSignal.timeout(8_000),
             body: JSON.stringify({ kind: next.kind, clientId: next.id, payload: next.payload }),
           });
         } catch {

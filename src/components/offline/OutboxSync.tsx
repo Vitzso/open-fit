@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { CloudOff, LoaderCircle, TriangleAlert, X } from "lucide-react";
 import { discard, flush, retry, SYNCED_EVENT, type FlushResult } from "@/lib/offline/outbox";
 import { useOutbox } from "@/lib/offline/useOutbox";
+import { warmOfflineCache } from "@/lib/offline/warm";
 
 /**
  * Sends the phone's outbox to the PC whenever there's a chance it's reachable (app opened or
@@ -22,7 +23,11 @@ export default function OutboxSync() {
   useEffect(() => {
     const run = () => {
       setState("busy");
-      void flush().then(setState);
+      void flush().then((result) => {
+        setState(result);
+        // The PC answered: refresh the copies of the main screens kept for when it can't be reached.
+        if (result === "done") void warmOfflineCache();
+      });
     };
     const onVisible = () => document.visibilityState === "visible" && run();
     const onSynced = () => router.refresh();

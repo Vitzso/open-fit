@@ -45,7 +45,7 @@ No subscription, no account, no cloud. Your data never leaves your home.
 
 You need a **Windows PC** (or a Mac, see below) that stays on while you use the app, and an **iPhone** on the same Wi-Fi.
 
-**Easiest on Windows:** download **`OpenFit-Setup-x.y.z.exe`** from the [latest release](https://github.com/Vitzso/open-fit/releases) and open it. Choose where the app goes, then it finds the OpenFit already on your PC (and offers to update it), or installs it with an optional **Pro training** tick box, runs Setup for you, and opens your dashboard (the **OpenFit Dashboard** shortcut). Installing a newer one later updates both and keeps your data. Start the phone app with the **OpenFit server** shortcut Setup adds.
+**Easiest on Windows:** download **`OpenFit-Setup-x.y.z.exe`** from the [latest release](https://github.com/Vitzso/open-fit/releases) and open it. It installs in a few seconds and opens OpenFit's setup screen. That screen finds the OpenFit already on your PC (and offers to update it), or installs it with an optional **Pro training** switch, runs Setup for you and opens your dashboard. From then on the **OpenFit** app is all you start: it runs OpenFit for your phone too, and keeps running in the tray when you close its window (tick **Start with Windows** there to have it always on). Installing a newer one later updates both and keeps your data.
 
 **Or by hand:**
 

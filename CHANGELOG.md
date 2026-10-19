@@ -2,6 +2,28 @@
 
 All notable changes to OpenFit. Versions follow [Semantic Versioning](https://semver.org).
 
+## [0.1.9] - 2026-10-20
+
+### Added
+
+- **One app instead of two.** On Windows the OpenFit app now runs the server your phone uses (through
+  the launcher, so certificates, database updates and Ollama are handled as before); there's no
+  separate server window to start. Closing the window keeps OpenFit running in the tray. Its menu has
+  your phone's addresses (click to copy), **Start with Windows** (starts hidden in the tray when you
+  sign in) and **Quit**. If OpenFit is already running (its old shortcut, an autostart), the app uses it
+  and leaves it running when you quit. The app's shortcut is **OpenFit** again, and Setup run from the
+  app no longer adds an "OpenFit server" shortcut.
+
+### Fixed
+
+- **The phone app took ages to open away from home and didn't work offline.** Without signal or VPN a
+  request to the PC hangs instead of failing, and the app waited for it (on iPhone, up to a minute)
+  before using its saved copy. Pages now wait at most 2.5 seconds, then open from the phone; the start
+  page follows the same rule. Saved pages last 30 days instead of 1, and the app's code a year, so it
+  still starts after days without the PC. The main screens are refreshed in the background whenever the
+  PC is reachable, so they work offline even if you haven't opened them lately. Sending a saved entry
+  gives up after 8 seconds and retries, instead of hanging.
+
 ## [0.1.8] - 2026-10-20
 
 ### Changed
