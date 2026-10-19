@@ -1,11 +1,13 @@
 import Link from "next/link";
-import { ChevronRight, Plus } from "lucide-react";
+import { ChevronRight, ListPlus, Plus } from "lucide-react";
 import { startWorkout } from "@/actions/workouts";
 import PageHeader from "@/components/PageHeader";
 import { prisma } from "@/lib/db";
 import { dayKey, daysAgoKey, formatDay } from "@/lib/dates";
 import { nextTemplate, TEMPLATES } from "@/lib/programs";
 import { getSettings } from "@/lib/settings";
+import { isModuleEnabled } from "@/lib/modules/server";
+import { listUserPrograms } from "@/modules/training-pro/lib/programs";
 import { btnSecondary, input } from "@/lib/ui";
 import { round, toDisplay } from "@/lib/units";
 
@@ -18,7 +20,7 @@ function relativeDay(day: string) {
 }
 
 export default async function TrainPage() {
-  const [s, workouts, lastTemplated] = await Promise.all([
+  const [s, workouts, lastTemplated, pro] = await Promise.all([
     getSettings(),
     prisma.workout.findMany({
       orderBy: [{ day: "desc" }, { startedAt: "desc" }],
@@ -26,12 +28,42 @@ export default async function TrainPage() {
       include: { sets: { include: { exercise: true } } },
     }),
     prisma.workout.findFirst({ where: { templateId: { not: null } }, orderBy: { startedAt: "desc" } }),
+    isModuleEnabled("training-pro"),
   ]);
+  const programs = pro ? await listUserPrograms() : [];
   const suggested = nextTemplate(lastTemplated?.templateId);
 
   return (
     <div style={{ "--accent": "var(--color-plate-blue)" } as React.CSSProperties}>
       <PageHeader title="Train" section="train" subtitle="Pick a ready-made workout, or start your own." />
+
+      {pro && (
+        <section aria-labelledby="mine" className="mb-8">
+          <h2 id="mine" className="mb-1 font-display text-xl font-semibold">
+            Your programs
+          </h2>
+          {programs.length === 0 ? (
+            <p className="mb-2 text-sm text-muted">Put together your own workouts from the exercise library.</p>
+          ) : (
+            <ul className="divide-y divide-line">
+              {programs.slice(0, 5).map((p) => (
+                <li key={p.id}>
+                  <Link href={`/workouts/programs/${p.id}`} className="flex items-center gap-3 py-3 active:opacity-70">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-display text-[22px] leading-tight font-semibold">{p.name}</p>
+                      <p className="truncate text-sm text-muted">{p.exercises.length} exercises</p>
+                    </div>
+                    <ChevronRight size={20} className="shrink-0 text-faint" />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+          <Link href="/workouts/programs" className="mt-1 inline-flex items-center gap-2 text-[15px] text-plate-blue">
+            <ListPlus size={17} /> {programs.length ? "All your programs, and build a new one" : "Build a program"}
+          </Link>
+        </section>
+      )}
 
       <section aria-labelledby="templates" className="mb-8">
         <h2 id="templates" className="mb-1 font-display text-xl font-semibold">

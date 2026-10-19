@@ -3,6 +3,7 @@
 import { useState } from "react";
 import RecentFoods, { type RecentFood } from "@/components/RecentFoods";
 import type { Meal } from "@/lib/nutrition";
+import AiFoodPanel from "./AiFoodPanel";
 import FoodEntryForm from "./FoodEntryForm";
 
 /**
@@ -13,6 +14,7 @@ export default function AddFoodPanel({ defaultMeal, recent, day }: { defaultMeal
   const [meal, setMeal] = useState<Meal>(defaultMeal);
   return (
     <>
+      <AiFoodPanel meal={meal} day={day} />
       <FoodEntryForm defaultMeal={defaultMeal} meal={meal} onMeal={setMeal} day={day} />
       <RecentFoods foods={recent} meal={meal} day={day} />
     </>

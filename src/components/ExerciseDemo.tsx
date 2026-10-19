@@ -11,12 +11,15 @@ import { mediaFor } from "@/lib/exercise-media";
 export default function ExerciseDemo({
   name,
   size = "full",
+  media: given,
 }: {
   name: string;
   /** "full": wide demo with controls; "thumb": small looping preview. */
   size?: "full" | "thumb";
+  /** Photos to use when the exercise has none bundled (e.g. from the Pro training library). */
+  media?: { start: string; end: string } | null;
 }) {
-  const media = mediaFor(name);
+  const media = mediaFor(name) ?? given ?? null;
   const [playing, setPlaying] = useState(true);
   const [frame, setFrame] = useState(0);
 

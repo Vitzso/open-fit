@@ -16,25 +16,26 @@ datasource db {
 
 /// Single-row table (id = 1) with goals and integration settings.
 model Settings {
-  id            Int      @id @default(1)
-  weightUnit    String   @default("kg") // "kg" | "lb"; also switches height to inches when "lb"
-  weekStart     Int      @default(0) // first day of the week: 0 = Sunday … 6 = Saturday
-  calorieGoal   Int      @default(2000)
-  proteinGoal   Int      @default(150)
-  carbsGoal     Int      @default(200)
-  fatGoal       Int      @default(65)
-  goalWeightKg  Float?
+  id                Int      @id @default(1)
+  weightUnit        String   @default("kg") // "kg" | "lb"; also switches height to inches when "lb"
+  weekStart         Int      @default(0) // first day of the week: 0 = Sunday … 6 = Saturday
+  calorieGoal       Int      @default(2000)
+  proteinGoal       Int      @default(150)
+  carbsGoal         Int      @default(200)
+  fatGoal           Int      @default(65)
+  goalWeightKg      Float?
   // Body profile, used to estimate calorie needs (all optional).
-  sex           String? // "male" | "female"
-  birthYear     Int?
-  heightCm      Float?
-  activityLevel String? // "sedentary" | "light" | "moderate" | "very"
-  weeklyLossPct Float    @default(0.6) // target fat-loss pace, % of body weight per week
-  ollamaBaseUrl String? // overrides OLLAMA_BASE_URL when set
-  ollamaModel   String? // overrides OLLAMA_MODEL when set
-  ollamaReasoning String? // "none" | "low" | "medium" | "high"; overrides OLLAMA_REASONING_EFFORT when set
+  sex               String? // "male" | "female"
+  birthYear         Int?
+  heightCm          Float?
+  activityLevel     String? // "sedentary" | "light" | "moderate" | "very"
+  weeklyLossPct     Float    @default(0.6) // target fat-loss pace, % of body weight per week
+  ollamaBaseUrl     String? // overrides OLLAMA_BASE_URL when set
+  ollamaModel       String? // overrides OLLAMA_MODEL when set
+  ollamaReasoning   String? // "none" | "low" | "medium" | "high"; overrides OLLAMA_REASONING_EFFORT when set
   coachInstructions String? // the user's own standing instructions for the AI coach
-  updatedAt     DateTime @updatedAt
+  enabledModules    String   @default("") // optional modules switched on in Settings, comma-separated ids (src/lib/modules)
+  updatedAt         DateTime @updatedAt
 }
 
 // ───────────── Workouts (openGym module) ─────────────
@@ -48,7 +49,7 @@ model Exercise {
 }
 
 model Workout {
-  id        Int          @id @default(autoincrement())
+  id         Int          @id @default(autoincrement())
   day        String
   name       String?
   notes      String?
@@ -69,6 +70,9 @@ model WorkoutSet {
   weightKg   Float    @default(0)
   rpe        Float?
   notes      String?
+  kind       String   @default("work") // "warmup" | "work" | "drop" (Pro training module); warm-ups don't count for records
+  /// Id made on the phone when the set was logged, so a sync retry can't save it twice.
+  clientId   String?  @unique
   createdAt  DateTime @default(now())
 
   @@index([workoutId])
@@ -86,18 +90,18 @@ model BodyWeight {
 
 /// Cache of Open Food Facts lookups so re-scanning a product is instant/offline.
 model FoodProduct {
-  barcode          String   @id
-  name             String
-  brand            String?
-  imageUrl         String?
-  servingSize      String?
-  servingQuantityG Float?
-  kcal100g         Float
-  protein100g      Float
-  carbs100g        Float
-  fat100g          Float
-  nutritionComplete Boolean @default(true)
-  fetchedAt        DateTime @default(now())
+  barcode           String   @id
+  name              String
+  brand             String?
+  imageUrl          String?
+  servingSize       String?
+  servingQuantityG  Float?
+  kcal100g          Float
+  protein100g       Float
+  carbs100g         Float
+  fat100g           Float
+  nutritionComplete Boolean  @default(true)
+  fetchedAt         DateTime @default(now())
 }
 
 model FoodEntry {
@@ -112,6 +116,8 @@ model FoodEntry {
   protein   Float
   carbs     Float
   fat       Float
+  /// Id made on the phone when the entry was logged, so a sync retry can't save it twice.
+  clientId  String?  @unique
   createdAt DateTime @default(now())
 
   @@index([day])
@@ -141,4 +147,50 @@ model CoachMessage {
   role      String // "user" | "assistant"
   content   String
   createdAt DateTime @default(now())
+}
+
+// ───────────── Pro training module (src/modules/training-pro) ─────────────
+
+/// A workout plan you built yourself (shown next to the ready-made ones while the module is on).
+model UserProgram {
+  id        Int                   @id @default(autoincrement())
+  name      String
+  notes     String?
+  createdAt DateTime              @default(now())
+  updatedAt DateTime              @updatedAt
+  exercises UserProgramExercise[]
+}
+
+model UserProgramExercise {
+  id        Int         @id @default(autoincrement())
+  programId Int
+  program   UserProgram @relation(fields: [programId], references: [id], onDelete: Cascade)
+  position  Int
+  name      String
+  sets      Int
+  reps      String // "8", "8-10", "30 s"
+  restSec   Int
+
+  @@index([programId])
+}
+
+// ───────────── Imports and Apple Health ─────────────
+
+/// A token for a device that sends data without the passcode cookie (an iPhone Shortcut).
+/// Only a SHA-256 hash is stored; the token itself is shown once when it's made.
+model ApiToken {
+  id         Int       @id @default(autoincrement())
+  name       String
+  tokenHash  String    @unique
+  createdAt  DateTime  @default(now())
+  lastUsedAt DateTime?
+}
+
+/// Daily activity from Apple Health (via the Shortcut): steps and active energy.
+model DailyActivity {
+  id         Int      @id @default(autoincrement())
+  day        String   @unique
+  steps      Int?
+  activeKcal Float?
+  updatedAt  DateTime @updatedAt
 }

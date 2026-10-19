@@ -6,6 +6,8 @@ import { isAllowedHost, isValidSession, SESSION_COOKIE } from "@/lib/auth";
 const PUBLIC = [
   /^\/login$/,
   /^\/api\/login$/,
+  // Apple Health Shortcut: authenticated by its own device token inside the route.
+  /^\/api\/ingest\/health$/,
   /^\/offline$/,
   /^\/manifest\.webmanifest$/,
   /^\/apple-icon/,
@@ -14,6 +16,8 @@ const PUBLIC = [
   // Public-domain exercise photos. Nothing private, and the offline cache may
   // fetch them before you've signed in (it would otherwise store the login page).
   /^\/exercises\/[a-z0-9-]+\/[01]\.jpg$/,
+  // Pro training module: library photos (public domain), same reasoning as above.
+  /^\/api\/modules\/training-pro\/img\/[A-Za-z0-9_-]+\/[01]\.jpg$/,
 ];
 
 const json = (status: number, error: string) => NextResponse.json({ error }, { status });

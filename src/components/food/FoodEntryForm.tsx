@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LoaderCircle, Plus } from "lucide-react";
-import { addFoodEntry } from "@/actions/food";
 import { EMPTY_MANUAL, entryFromManual, entryFromProduct, entryProblem, lenientNumber, type ManualFood } from "@/lib/food-entry";
+import { dayKey } from "@/lib/dates";
 import { scaleNutrition, type Meal, type Per100g } from "@/lib/nutrition";
+import { enqueue } from "@/lib/offline/outbox";
 import type { FoodProductData } from "@/lib/openfoodfacts";
 import { btnPrimary } from "@/lib/ui";
 import ManualFoodFields from "./ManualFoodFields";
@@ -35,7 +36,7 @@ export default function FoodEntryForm({
   day?: string;
 }) {
   const router = useRouter();
-  const [pending, startTransition] = useTransition();
+  const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ownMeal, setOwnMeal] = useState<Meal>(defaultMeal);
   const meal = sharedMeal ?? ownMeal;
@@ -53,15 +54,12 @@ export default function FoodEntryForm({
     const entry = product ? entryFromProduct(product, grams, scaled, meal, day) : entryFromManual(manual, meal, barcode, day);
     const problem = entryProblem(entry, !!product);
     if (problem) return setError(problem);
-    startTransition(async () => {
-      try {
-        await addFoodEntry(entry);
-        router.push(day ? `/nutrition?day=${day}` : "/nutrition");
-        router.refresh();
-      } catch {
-        setError("Couldn't save — check the values and try again.");
-      }
-    });
+    // Saved on the phone first and sent to the PC in the background (it waits there if the PC
+    // can't be reached), so logging works with no signal and never loses an entry.
+    setPending(true);
+    const onDay = entry.day ?? dayKey();
+    enqueue("food", { ...entry, day: onDay }, { label: `${entry.name} · ${Math.round(entry.calories)} kcal`, day: onDay });
+    router.push(day ? `/nutrition?day=${day}` : "/nutrition");
   }
 
   return (

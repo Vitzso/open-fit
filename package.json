@@ -1,6 +1,6 @@
 {
   "name": "openfit",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "license": "MIT",
   "description": "Self-hosted workout, body-weight and nutrition tracker PWA with barcode scanning and a local Ollama AI coach.",
@@ -11,6 +11,7 @@
     "start": "next start -H 0.0.0.0 --keepAliveTimeout 65000",
     "start:https": "node server.mjs",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:seed": "prisma db seed",
@@ -47,6 +48,7 @@
     "@types/react-dom": "^19.1.0",
     "prisma": "^6.19.3",
     "tailwindcss": "^4.3.3",
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "vitest": "5.0.3"
   }
 }

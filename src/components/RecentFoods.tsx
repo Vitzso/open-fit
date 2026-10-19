@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
-import { Check, LoaderCircle, Plus } from "lucide-react";
-import { relogFoodEntry } from "@/actions/food";
+import { useState } from "react";
+import { Check, Plus } from "lucide-react";
+import { dayKey } from "@/lib/dates";
 import type { Meal } from "@/lib/nutrition";
+import { enqueue } from "@/lib/offline/outbox";
 
 export interface RecentFood {
   id: number;
@@ -16,24 +16,15 @@ export interface RecentFood {
 
 /** One-tap re-logging of foods you eat often. */
 export default function RecentFoods({ foods, meal, day }: { foods: RecentFood[]; meal: Meal; day?: string }) {
-  const router = useRouter();
-  const [pending, startTransition] = useTransition();
-  const [busyId, setBusyId] = useState<number | null>(null);
   const [added, setAdded] = useState<Set<number>>(new Set());
 
   if (foods.length === 0) return null;
 
-  function add(id: number) {
-    setBusyId(id);
-    startTransition(async () => {
-      try {
-        await relogFoodEntry(id, meal, day);
-        setAdded((s) => new Set(s).add(id));
-        router.refresh();
-      } finally {
-        setBusyId(null);
-      }
-    });
+  /** Queues "ate this again" on the phone; it syncs to the PC in the background. */
+  function add(f: RecentFood) {
+    const onDay = day ?? dayKey();
+    enqueue("relog", { entryId: f.id, meal, day: onDay }, { label: `${f.name} · ${Math.round(f.calories)} kcal`, day: onDay });
+    setAdded((s) => new Set(s).add(f.id));
   }
 
   return (
@@ -44,8 +35,7 @@ export default function RecentFoods({ foods, meal, day }: { foods: RecentFood[];
           <li key={f.id}>
             <button
               type="button"
-              disabled={pending}
-              onClick={() => add(f.id)}
+              onClick={() => add(f)}
               className="flex w-full items-center gap-3 px-4 py-2.5 text-left active:bg-raised disabled:opacity-60"
             >
               <span className="min-w-0 flex-1">
@@ -55,9 +45,7 @@ export default function RecentFoods({ foods, meal, day }: { foods: RecentFood[];
                   {Math.round(f.calories)} kcal · P {Math.round(f.protein)}
                 </span>
               </span>
-              {busyId === f.id ? (
-                <LoaderCircle size={18} className="animate-spin text-muted" />
-              ) : added.has(f.id) ? (
+              {added.has(f.id) ? (
                 <Check size={18} className="text-plate-green" />
               ) : (
                 <Plus size={18} className="text-muted" />

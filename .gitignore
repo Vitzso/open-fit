@@ -30,3 +30,6 @@ desktop/dist/
 graphify-out/
 .claude/settings.local.json
 *.log
+
+# downloaded module data (e.g. the Pro training exercise library and its photo cache)
+data/

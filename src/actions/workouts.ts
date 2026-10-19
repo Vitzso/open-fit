@@ -4,10 +4,8 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { dayKey } from "@/lib/dates";
-import { findOrCreateExercise } from "@/lib/exercises";
 import { getTemplate } from "@/lib/programs";
-import { getSettings } from "@/lib/settings";
-import { fromDisplay } from "@/lib/units";
+import { writeSet } from "@/lib/log/writes";
 import { revalidateWorkout, revalidateWorkouts } from "./revalidate";
 import { id, SetInput } from "./schemas";
 
@@ -38,22 +36,7 @@ export async function deleteWorkout(workoutId: number) {
 /** Logs one set. The weight arrives in the user's display unit and is stored in kg. */
 export async function addSet(input: z.input<typeof SetInput>) {
   const data = SetInput.parse(input);
-  const [{ weightUnit }, workout] = await Promise.all([
-    getSettings(),
-    prisma.workout.findUnique({ where: { id: data.workoutId }, select: { id: true } }),
-  ]);
-  if (!workout) throw new Error("This workout was deleted.");
-  const exercise = await findOrCreateExercise(data.exerciseName);
-  await prisma.workoutSet.create({
-    data: {
-      workoutId: data.workoutId,
-      exerciseId: exercise.id,
-      reps: data.reps,
-      weightKg: fromDisplay(data.weight, weightUnit),
-      rpe: data.rpe ?? null,
-      notes: data.notes || null,
-    },
-  });
+  await writeSet(data);
   revalidateWorkout(data.workoutId);
 }
 

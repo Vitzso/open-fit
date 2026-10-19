@@ -10,7 +10,7 @@ type SessionsByExercise = Map<string, LastSession[]>;
 /** Sets from the last 6 weeks, grouped into sessions per exercise. */
 async function loadSessions(unit: WeightUnit): Promise<SessionsByExercise> {
   const sets = await prisma.workoutSet.findMany({
-    where: { workout: { day: { gte: daysAgoKey(42) } } },
+    where: { workout: { day: { gte: daysAgoKey(42) } }, kind: { not: "warmup" } },
     include: { exercise: true, workout: true },
     orderBy: { createdAt: "asc" },
   });

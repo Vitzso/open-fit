@@ -4,12 +4,17 @@ import { deleteSet, deleteWorkout } from "@/actions/workouts";
 import ConfirmSubmit from "@/components/ConfirmSubmit";
 import OptimisticRow from "@/components/OptimisticRow";
 import PageHeader from "@/components/PageHeader";
+import PendingList from "@/components/offline/PendingList";
 import WorkoutLogger from "@/components/workout/WorkoutLogger";
 import type { LastSet } from "@/lib/workout-plan";
 import type { LastSession } from "@/lib/progression";
 import { prisma } from "@/lib/db";
 import { dayKey, formatDay, parseDayKey } from "@/lib/dates";
 import { getTemplate } from "@/lib/programs";
+import { isModuleEnabled } from "@/lib/modules/server";
+import { findLibraryExercise, libraryPhotos } from "@/modules/training-pro/lib/library";
+import { userPlanFor } from "@/modules/training-pro/lib/programs";
+import { getBests } from "@/modules/training-pro/lib/records";
 import { getSettings } from "@/lib/settings";
 import { btnIcon } from "@/lib/ui";
 import { round, toDisplay } from "@/lib/units";
@@ -20,7 +25,7 @@ export default async function WorkoutPage({ params }: { params: Promise<{ id: st
   const id = Number((await params).id);
   if (!Number.isInteger(id)) notFound();
 
-  const [s, workout, exercises, previous] = await Promise.all([
+  const [s, workout, exercises, previous, pro] = await Promise.all([
     getSettings(),
     prisma.workout.findUnique({
       where: { id },
@@ -29,16 +34,21 @@ export default async function WorkoutPage({ params }: { params: Promise<{ id: st
     prisma.exercise.findMany({ orderBy: { name: "asc" } }),
     // Most recent previous set of each exercise, to prefill weight and reps.
     prisma.workoutSet.findMany({
-      where: { workoutId: { not: id } },
+      // Warm-ups don't count for "last time" or progression.
+      where: { workoutId: { not: id }, kind: { not: "warmup" } },
       orderBy: { createdAt: "desc" },
       include: { exercise: true, workout: true },
       take: 500,
     }),
+    isModuleEnabled("training-pro"),
   ]);
   if (!workout) notFound();
   const unit = s.weightUnit;
   const disp = (kg: number) => round(toDisplay(kg, unit), 1);
+  // A ready-made workout, or (Pro training) one of your own programs.
   const template = getTemplate(workout.templateId);
+  const ownPlan = !template && pro ? await userPlanFor(workout.templateId) : null;
+  const plan = template?.exercises ?? ownPlan;
 
   const last: Record<string, LastSet> = {};
   // All sets of each exercise's most recent previous workout (for progression tips).
@@ -59,10 +69,23 @@ export default async function WorkoutPage({ params }: { params: Promise<{ id: st
   const done: Record<string, number> = {};
   for (const set of workout.sets) {
     groups.set(set.exercise.name, [...(groups.get(set.exercise.name) ?? []), set]);
-    done[set.exercise.name.toLowerCase()] = (done[set.exercise.name.toLowerCase()] ?? 0) + 1;
+    if (set.kind !== "warmup") done[set.exercise.name.toLowerCase()] = (done[set.exercise.name.toLowerCase()] ?? 0) + 1;
   }
-  const plannedSets = template?.exercises.reduce((n, e) => n + e.sets, 0);
-  const doneOfPlan = template?.exercises.reduce((n, e) => n + Math.min(e.sets, done[e.name.toLowerCase()] ?? 0), 0);
+  const plannedSets = plan?.reduce((n, e) => n + e.sets, 0);
+  const doneOfPlan = plan?.reduce((n, e) => n + Math.min(e.sets, done[e.name.toLowerCase()] ?? 0), 0);
+
+  // Pro training module: all-time bests (for PR alerts) and library photos for this workout's exercises.
+  let proProps: { bests: Awaited<ReturnType<typeof getBests>>; media: Record<string, { start: string; end: string }> } | null = null;
+  if (pro) {
+    const media: Record<string, { start: string; end: string }> = {};
+    const names = new Set([...(plan ?? []).map((e) => e.name), ...workout.sets.map((x) => x.exercise.name), ...exercises.map((e) => e.name)]);
+    for (const n of names) {
+      const lib = findLibraryExercise(n);
+      const photos = lib && libraryPhotos(lib);
+      if (photos) media[n.toLowerCase()] = photos;
+    }
+    proProps = { bests: await getBests(unit, id), media };
+  }
 
   return (
     <div style={{ "--accent": "var(--color-plate-blue)" } as React.CSSProperties}>
@@ -74,7 +97,7 @@ export default async function WorkoutPage({ params }: { params: Promise<{ id: st
         subtitle={
           <>
             {workout.day === dayKey() ? "Today" : formatDay(workout.day)}
-            {template ? `, ${doneOfPlan} of ${plannedSets} sets done` : ""}
+            {plan ? `, ${doneOfPlan} of ${plannedSets} sets done` : ""}
           </>
         }
         action={
@@ -95,10 +118,13 @@ export default async function WorkoutPage({ params }: { params: Promise<{ id: st
         unit={unit}
         exercises={exercises.map((e) => e.name)}
         last={last}
-        plan={template?.exercises ?? null}
+        plan={plan ?? null}
         done={done}
         lastSessions={lastSessions}
+        pro={proProps}
       />
+
+      <PendingList kinds={["set"]} workoutId={id} className="mt-6" />
 
       <section aria-labelledby="logged" className="mt-8">
         <h2 id="logged" className="mb-1 font-display text-xl font-semibold">
@@ -125,6 +151,7 @@ export default async function WorkoutPage({ params }: { params: Promise<{ id: st
                         <span className="font-display text-lg font-semibold">
                           {disp(set.weightKg)} {unit} × {set.reps}
                         </span>
+                        {set.kind !== "work" && <span className="text-sm text-muted"> ({set.kind === "warmup" ? "warm-up" : "drop set"})</span>}
                         {set.rpe != null && <span className="text-sm text-muted">, RPE {set.rpe}</span>}
                         {set.notes && <span className="block text-sm text-muted">{set.notes}</span>}
                       </span>

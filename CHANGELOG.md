@@ -2,9 +2,27 @@
 
 All notable changes to OpenFit. Versions follow [Semantic Versioning](https://semver.org).
 
-## [Unreleased]
+## [0.1.2] - 2026-10-19
 
 ### Added
+
+- **Logging works with no signal.** Food, sets and weigh-ins are saved on the phone first and sent to
+  the PC in the background (`/api/log`), so a dead zone or a sleeping PC never loses an entry. Each entry
+  carries its own id, so a retry can't save it twice; a pill above the tab bar shows what's waiting, and
+  anything the PC refuses (say, a set for a deleted workout) can be retried or discarded.
+- **AI food logging.** Snap your plate and/or describe it ("2 eggs, toast with butter and a latte"): the
+  local model lists the foods with portions and macros, you adjust and add them in one tap. Numbers from
+  your own log or a scanned product beat the model's guess; a description that names a food you've logged
+  uses that entry. Nothing leaves your PC.
+- **Modules**: optional extras in Settings → Modules, each self-contained in `src/modules/<id>/`. The first:
+  **Pro training**, with the 870-exercise free-exercise-db library (downloaded when switched on; photos
+  cached as you view them), personal-record alerts (also offline), a plate and warm-up calculator, warm-up
+  and drop sets (warm-ups don't count for records or progression), and your own programs.
+- **Import** from MyFitnessPal (meal totals), Strong and Hevy (workouts), or an OpenFit backup, with a
+  preview and duplicate skipping (Settings → Import).
+- **Apple Health** through an iPhone Shortcut and a revocable device token (Settings → Apple Health):
+  weight, steps and active calories arrive by themselves; the coach sees your activity.
+- Unit tests (`npm test`, Vitest) for the offline queue, imports, AI estimates and plate maths.
 
 - **Choose your remote access.** Use OpenFit away from home over Tailscale (or Headscale), WireGuard,
   ZeroTier, NetBird, or any other VPN (OpenVPN, Nebula, a router VPN...) by entering its address.
@@ -53,5 +71,6 @@ All notable changes to OpenFit. Versions follow [Semantic Versioning](https://se
 First release: workout logging with ready-made programs, nutrition logging with a camera barcode scanner,
 body-weight tracking, a local AI coach through Ollama, passcode lock, HTTPS and the one-click Windows setup.
 
+[0.1.2]: https://github.com/Vitzso/open-fit/releases/tag/v0.1.2
 [0.1.1]: https://github.com/Vitzso/open-fit/releases/tag/v0.1.1
 [0.1.0]: https://github.com/Vitzso/open-fit/commit/50a2b9f

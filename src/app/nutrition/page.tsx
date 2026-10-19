@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ChevronLeft, ChevronRight, Plus, ScanBarcode } from "lucide-react";
 import { deleteFoodEntry } from "@/actions/food";
 import MacroBar from "@/components/MacroBar";
+import PendingList from "@/components/offline/PendingList";
 import OptimisticRow from "@/components/OptimisticRow";
 import PageHeader from "@/components/PageHeader";
 import { prisma } from "@/lib/db";
@@ -88,6 +89,8 @@ export default async function FoodPage({ searchParams }: { searchParams: Promise
           <Plus size={19} /> Add food
         </Link>
       </div>
+
+      <PendingList kinds={["food", "relog"]} day={day} className="mb-6" />
 
       <div className="space-y-7">
         {MEALS.map((meal) => {

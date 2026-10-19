@@ -1,4 +1,5 @@
-import { Download } from "lucide-react";
+import Link from "next/link";
+import { Download, FileUp, HeartPulse } from "lucide-react";
 import SignOutButton from "@/components/SignOutButton";
 import { btnSecondary, card } from "@/lib/ui";
 
@@ -22,6 +23,15 @@ export default function SecuritySection({ locked }: { locked: boolean }) {
         {locked && <SignOutButton />}
       </div>
       <p className="text-sm text-muted">The backup is a file of all your workouts, weigh-ins, food log, settings and coach history.</p>
+      <div className="grid grid-cols-2 gap-2">
+        <Link href="/settings/import" className={btnSecondary}>
+          <FileUp size={16} /> Import
+        </Link>
+        <Link href="/settings/health" className={btnSecondary}>
+          <HeartPulse size={16} /> Apple Health
+        </Link>
+      </div>
+      <p className="text-sm text-muted">Bring history over from MyFitnessPal, Strong or Hevy, or restore a backup. Apple Health sends weight and steps by itself.</p>
     </section>
   );
 }

@@ -1,7 +1,7 @@
 // Public API of the Ollama connector. Import from "@/lib/ollama", not the files inside.
 import "server-only";
 
-export type { ChatMessage, ChatOptions, ChatRole, OllamaConfig, OllamaErrorCode, OllamaHealth, ReasoningEffort } from "./types";
+export type { ChatMessage, ChatOptions, ContentPart, ChatRole, OllamaConfig, OllamaErrorCode, OllamaHealth, ReasoningEffort } from "./types";
 export { isValidModelName, reasoningEffortFromEnv, resolveOllamaConfig, validateOllamaUrl } from "./config";
 export { OllamaError } from "./errors";
 export { getModelCapabilities } from "./capabilities";

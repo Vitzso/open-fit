@@ -5,6 +5,7 @@ import CalorieTargetCard from "@/components/settings/CalorieTargetCard";
 import CoachConnectionSection from "@/components/settings/CoachConnectionSection";
 import CoachInstructionsSection from "@/components/settings/CoachInstructionsSection";
 import DailyGoalsSection from "@/components/settings/DailyGoalsSection";
+import ModulesSection from "@/components/settings/ModulesSection";
 import RemoteAccessSection from "@/components/settings/RemoteAccessSection";
 import SecuritySection from "@/components/settings/SecuritySection";
 import SetupChecklist from "@/components/settings/SetupChecklist";
@@ -12,6 +13,7 @@ import StatusBanner from "@/components/settings/StatusBanner";
 import UnitsSection from "@/components/settings/UnitsSection";
 import { passcodeEnabled } from "@/lib/auth";
 import { getEnergyEstimate } from "@/lib/energy-data";
+import { MODULES, parseEnabledModules } from "@/lib/modules/registry";
 import { getSettings } from "@/lib/settings";
 import { getRemoteStatus } from "@/lib/setup/remote-status";
 import { btnPrimary } from "@/lib/ui";
@@ -44,6 +46,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         <CoachInstructionsSection s={s} />
         <button className={`${btnPrimary} w-full`}>Save settings</button>
       </form>
+      <ModulesSection modules={MODULES} enabled={[...parseEnabledModules(s.enabledModules)]} />
       <SetupChecklist />
       <RemoteAccessSection config={remote.config} status={{ connected: remote.connected, installed: remote.installed, hosts: remote.hosts }} />
       <SecuritySection locked={passcodeEnabled()} />

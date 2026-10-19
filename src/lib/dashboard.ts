@@ -105,7 +105,7 @@ export async function getDashboardData(range: RangeDays): Promise<DashboardData>
       _sum: { calories: true, protein: true, carbs: true, fat: true },
     }),
     prisma.workoutSet.findMany({
-      where: { workout: { day: { gte: from } } },
+      where: { workout: { day: { gte: from } }, kind: { not: "warmup" } },
       include: { exercise: true, workout: true },
       orderBy: { createdAt: "asc" },
     }),

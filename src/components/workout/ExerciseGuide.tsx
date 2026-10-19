@@ -24,14 +24,23 @@ function useDemoPreference(): [boolean, () => void] {
 }
 
 /** How to do the exercise: demo photos (hideable), coaching tip, and what you did last time. */
-export default function ExerciseGuide({ exercise, prev }: { exercise: string; prev?: LastSet }) {
+export default function ExerciseGuide({
+  exercise,
+  prev,
+  media,
+}: {
+  exercise: string;
+  prev?: LastSet;
+  /** Extra photos (Pro training library) for exercises without bundled ones. */
+  media?: { start: string; end: string } | null;
+}) {
   const [showDemo, toggleDemo] = useDemoPreference();
   const tip = tipFor(exercise);
   return (
     <>
-      {mediaFor(exercise) && (
+      {(mediaFor(exercise) || media) && (
         <div>
-          {showDemo && <ExerciseDemo name={exercise} />}
+          {showDemo && <ExerciseDemo name={exercise} media={media} />}
           <button type="button" onClick={toggleDemo} className="mt-1.5 text-sm text-muted underline-offset-2 active:text-fg">
             {showDemo ? "Hide demo" : "Show how it's done"}
           </button>

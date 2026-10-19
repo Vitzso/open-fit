@@ -1,10 +1,13 @@
 "use client";
 // State and actions for the workout logger: current exercise, form fields,
 // rest timer, progression suggestion, and saving a set.
-import { useEffect, useMemo, useState, useTransition } from "react";
-import { addSet } from "@/actions/workouts";
+import { useEffect, useMemo, useState } from "react";
+import { dayKey } from "@/lib/dates";
+import { enqueue } from "@/lib/offline/outbox";
+import { usePending } from "@/lib/offline/useOutbox";
 import type { PlannedExercise } from "@/lib/programs";
 import { suggestNext, type LastSession } from "@/lib/progression";
+import { newRecords, type Bests } from "@/modules/training-pro/lib/records-shared";
 import { readStored, writeStored } from "@/lib/storage";
 import {
   exKey,
@@ -29,17 +32,40 @@ export interface WorkoutLoggerInput {
   plan: PlannedExercise[] | null;
   done: DoneCounts;
   lastSessions: Record<string, LastSession>;
+  /** Pro training module (when on): all-time bests per exercise, for personal-record alerts. */
+  pro?: { bests: Record<string, Bests> } | null;
+}
+
+export type SetKind = "warmup" | "work" | "drop";
+
+/** A personal record just set, for the celebration banner. */
+export interface NewRecord {
+  exercise: string;
+  what: ("weight" | "e1rm" | "reps")[];
+  weight: number;
+  reps: number;
 }
 
 /** Everything the logger UI needs, with handlers. */
-export function useWorkoutLogger({ workoutId, unit, last, plan, done, lastSessions }: WorkoutLoggerInput) {
-  const [pending, startTransition] = useTransition();
+export function useWorkoutLogger({ workoutId, unit, last, plan, done: saved, lastSessions, pro }: WorkoutLoggerInput) {
+  // Sets saved on the phone that haven't reached the PC yet count as done, so the plan moves on
+  // even with no signal in the gym.
+  const waiting = usePending(["set"], { workoutId });
+  const done = useMemo(() => {
+    const out: DoneCounts = { ...saved };
+    for (const w of waiting) if (!w.failed && w.exercise && w.payload.kind !== "warmup") out[exKey(w.exercise)] = (out[exKey(w.exercise)] ?? 0) + 1;
+    return out;
+  }, [saved, waiting]);
   const [error, setError] = useState<string | null>(null);
   const firstOpen = firstOpenExercise(plan, done);
   // Start with the current exercise's planned rest; otherwise your last choice (loaded below).
   const [restLen, setRestLen] = useState(() => findPlanned(plan, firstOpen)?.restSec ?? 90);
   const [restEnd, setRestEnd] = useState<number | null>(null);
   const [fields, setFields] = useState<SetFields>(() => initialFields(firstOpen, plan, last));
+  // Pro training module: set type, and bests that update as you beat them.
+  const [kind, setKind] = useState<SetKind>("work");
+  const [bests, setBests] = useState<Record<string, Bests>>(() => pro?.bests ?? {});
+  const [record, setRecord] = useState<NewRecord | null>(null);
 
   const planned = findPlanned(plan, fields.exercise);
   const doneHere = done[exKey(fields.exercise)] ?? 0;
@@ -95,16 +121,30 @@ export function useWorkoutLogger({ workoutId, unit, last, plan, done, lastSessio
     setError(null);
     const v = validateSetFields(fields);
     if (!v.ok) return setError(v.error);
-    startTransition(async () => {
-      try {
-        await addSet({ workoutId, ...v.set });
-        setFields((cur) => ({ ...cur, notes: "" }));
-        setRestEnd(Date.now() + restLen * 1000);
-        advanceIfFinished(v.set.exerciseName);
-      } catch {
-        setError("That set wasn't saved. Check your connection and try again.");
-      }
-    });
+    // Saved on the phone and sent to the PC in the background (it waits if the PC can't be reached).
+    const { exerciseName, weight, reps } = v.set;
+    const thisKind: SetKind = pro ? kind : "work";
+    // Personal records (Pro training): checked here, so they're celebrated even offline.
+    if (pro && thisKind !== "warmup") {
+      const k = exKey(exerciseName);
+      const what = newRecords(bests[k], weight, reps);
+      setRecord(what.length ? { exercise: exerciseName, what, weight, reps } : null);
+      const e1rm = weight * (1 + reps / 30);
+      setBests((b) => ({
+        ...b,
+        [k]: { weight: Math.max(b[k]?.weight ?? 0, weight), e1rm: Math.max(b[k]?.e1rm ?? 0, reps <= 1 ? weight : e1rm), reps: Math.max(b[k]?.reps ?? 0, reps) },
+      }));
+    }
+    enqueue(
+      "set",
+      { workoutId, ...v.set, unit: unit === "lb" ? "lb" : "kg", ...(pro ? { kind: thisKind } : {}) },
+      { label: `${exerciseName}: ${weight} ${unit} × ${reps}`, day: dayKey(), workoutId, exercise: exerciseName },
+    );
+    setFields((cur) => ({ ...cur, notes: "" }));
+    setRestEnd(Date.now() + restLen * 1000);
+    // Warm-ups don't use up a planned set; the next set is a work set again.
+    if (thisKind !== "warmup") advanceIfFinished(exerciseName);
+    if (thisKind === "warmup") setKind("work");
   }
 
   return {
@@ -115,7 +155,17 @@ export function useWorkoutLogger({ workoutId, unit, last, plan, done, lastSessio
     suggestion,
     applySuggestion,
     error,
-    pending,
+    pending: false,
+    done,
+    kind,
+    setKind,
+    record,
+    dismissRecord: () => setRecord(null),
+    /** Fills in a warm-up from the plate calculator. */
+    applyWarmup: (weight: number, reps: number) => {
+      setFields((cur) => ({ ...cur, weight: String(weight), reps: String(reps) }));
+      setKind("warmup");
+    },
     restLen,
     restEnd,
     setRestEnd,

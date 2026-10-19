@@ -268,6 +268,51 @@ If you denied camera access by mistake, go to Settings → Apps → Safari → C
 Keep the server running whenever you want to use the app. To start it automatically, see
 `pm2` or Windows Task Scheduler running `npm run start:https` at log-on.
 
+## Logging with no signal
+
+Everything you log on the phone (food, sets, weigh-ins) is saved on the phone first and sent to the
+PC in the background. In a gym basement, on a plane, or while the PC sleeps, just keep logging: a pill
+above the tab bar says how many entries are waiting, and they go out by themselves when the PC is
+reachable again (when the app is opened, the network comes back, or every 15 seconds). Each entry is
+sent exactly once. If the PC refuses one (for example a set for a workout you deleted on the PC), tap
+the pill to retry or discard it.
+
+## AI food logging: snap or describe your meal
+
+On **Add food**, the **Snap or describe it** card asks your local AI coach what you ate: take a photo
+of your plate, type or dictate a description ("a chicken salad and a can of cola"), or both. You get a
+list of foods with portions and macros to adjust (change the grams and the macros follow), then
+**Add all** puts them in the meal you picked. Foods you've logged before and scanned products use their
+real numbers instead of the AI's estimate. Photos need a vision model such as `gemma4` (the default);
+with a text-only model, describe the food instead. The first photo after a restart can take up to half
+a minute while the model loads.
+
+## Modules (optional extras)
+
+**Settings → Modules** lists extras you can switch on and off. They add screens and tools but never
+change your data when switched off.
+
+- **Pro training**: the full free-exercise-db library (about 870 exercises with photos and how-tos,
+  downloaded once from GitHub when you switch it on, photos fetched as you view them and kept in
+  `data/modules/training-pro/`), personal-record alerts, a plate and warm-up calculator under the
+  weight field, a set-type picker (warm-up / work / drop), and **Train → Your programs** to build your own
+  workouts next to the ready-made ones.
+
+For developers: a module is a folder `src/modules/<id>/` with a `manifest.ts`, listed in
+`src/lib/modules/registry.ts`. Core screens check `isModuleEnabled("<id>")` before showing its pieces.
+
+## Import and Apple Health
+
+**Settings → Import** reads a MyFitnessPal **Nutrition** export (one entry per meal: MyFitnessPal doesn't
+export single foods), a **Strong** or **Hevy** workout CSV, or an OpenFit backup. It shows what's new and
+what you already have before anything is written, and skips duplicates, so importing twice is safe.
+Choose the weight unit for Strong files (they don't say).
+
+**Settings → Apple Health** connects an iPhone Shortcut: make a device token there (it's shown once),
+then build the Shortcut as the screen explains (Find Health Samples → Get Contents of URL with the token)
+and run it every morning with an Automation. Weigh-ins from a smart scale, steps and active calories then
+arrive by themselves, and the coach uses them. Revoke the token there to stop it at once.
+
 ## Desktop app (Windows and Mac): your progress on a big screen
 
 The phone app is for logging. The desktop app is for looking back: a full-size dashboard

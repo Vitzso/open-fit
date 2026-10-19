@@ -1,11 +1,13 @@
-import { deleteBodyWeight, logBodyWeight } from "@/actions/weight";
+import { deleteBodyWeight } from "@/actions/weight";
 import OptimisticRow from "@/components/OptimisticRow";
+import PendingList from "@/components/offline/PendingList";
+import WeighInForm from "@/components/WeighInForm";
 import PageHeader from "@/components/PageHeader";
 import WeightChart from "@/components/WeightChart";
 import { prisma } from "@/lib/db";
 import { dayKey, daysAgoKey, formatDay } from "@/lib/dates";
 import { getSettings } from "@/lib/settings";
-import { btnPrimary, card, input, label } from "@/lib/ui";
+
 import { round, toDisplay } from "@/lib/units";
 
 export const dynamic = "force-dynamic";
@@ -72,33 +74,8 @@ export default async function WeightPage() {
       </section>
       )}
 
-      <form action={logBodyWeight} className={`${card} mb-8`}>
-        <h2 className="mb-1 font-display text-xl font-semibold">{latest ? "Log a weigh-in" : "Log your first weigh-in"}</h2>
-        {!latest && <p className="mb-3 text-[15px] text-muted">After two weigh-ins you&apos;ll see your trend here.</p>}
-        {latest && <div className="mb-3" />}
-        <div className="grid grid-cols-2 gap-2.5">
-          <div>
-            <label htmlFor="weight" className={label}>
-              Weight ({unit})
-            </label>
-            <input
-              id="weight"
-              name="weight"
-              className={`${input} font-display text-xl`}
-              inputMode="decimal"
-              required
-              placeholder={latest ? String(disp(latest.weightKg)) : "0.0"}
-            />
-          </div>
-          <div>
-            <label htmlFor="date" className={label}>
-              Date
-            </label>
-            <input id="date" name="date" type="date" className={input} defaultValue={dayKey()} max={dayKey()} />
-          </div>
-        </div>
-        <button className={`${btnPrimary} mt-3 w-full`}>Save weigh-in</button>
-      </form>
+      <PendingList kinds={["weight"]} className="mb-4" />
+      <WeighInForm unit={unit} placeholder={latest ? String(disp(latest.weightKg)) : "0.0"} first={!latest} />
 
       <section aria-labelledby="history">
         <h2 id="history" className="mb-1 font-display text-xl font-semibold">
