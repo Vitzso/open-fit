@@ -1,0 +1,123 @@
+# Builds the Windows installer (desktop/dist/OpenFit-Setup-<version>.exe) from this public repository,
+# so it can be code-signed for free through SignPath Foundation, which only signs builds made by CI.
+#
+# Runs on a pushed version tag (v0.2.0) and by hand (Actions > Release Windows installer > Run workflow).
+# Every run keeps the installer as a workflow artifact; a run on a tag also attaches it to that tag's
+# GitHub release, creating the release if it doesn't exist (an existing release's notes are left alone).
+name: Release Windows installer
+
+on:
+  push:
+    tags: ["v*.*.*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write # attach the installer to the release
+  actions: read # lets SignPath download the unsigned artifact (once signing is on)
+
+concurrency:
+  group: release-windows-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    env:
+      # No local certificate: the installer is signed (later) by SignPath, not by electron-builder.
+      CSC_IDENTITY_AUTO_DISCOVERY: "false"
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v7
+
+      # Setup installs Node.js LTS on users' PCs (OpenFit needs 20.12+, see launcher/setup/node.ps1).
+      - uses: actions/setup-node@v7
+        with:
+          node-version: lts/*
+
+      - name: Check the tag matches the version
+        if: github.ref_type == 'tag'
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          $desktop = (Get-Content desktop/package.json -Raw | ConvertFrom-Json).version
+          if ("v$version" -ne $env:TAG -or $desktop -ne $version) {
+            throw "Tag $env:TAG doesn't match package.json ($version) and desktop/package.json ($desktop)."
+          }
+
+      - name: Install OpenFit's packages
+        run: npm ci
+
+      - name: Install the desktop app's packages
+        working-directory: desktop
+        run: npm ci
+
+      # bundle.mjs builds OpenFit (npm run build) and bundles it prebuilt, then electron-builder makes the
+      # installer. --publish never: the release step below attaches it (electron-builder would try on a tag).
+      - name: Build the installer
+        working-directory: desktop
+        run: npm run dist:win -- --publish never
+
+      - name: Find the installer
+        id: installer
+        run: |
+          $version = (Get-Content desktop/package.json -Raw | ConvertFrom-Json).version
+          $file = "desktop/dist/OpenFit-Setup-$version.exe"
+          if (-not (Test-Path $file)) { throw "$file wasn't built." }
+          "name=OpenFit-Setup-$version" >> $env:GITHUB_OUTPUT
+          "file=$file" >> $env:GITHUB_OUTPUT
+
+      - name: Upload the unsigned installer
+        id: upload-unsigned
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ steps.installer.outputs.name }}-unsigned
+          path: ${{ steps.installer.outputs.file }}
+          if-no-files-found: error
+
+      # ── Code signing (SignPath Foundation) ─────────────────────────────────────────────────────
+      # Off until SignPath accepts the project. To switch it on:
+      #   1. Add the repository secret SIGNPATH_API_TOKEN (Settings > Secrets and variables > Actions).
+      #   2. Replace the three placeholders below with the values from the SignPath project.
+      #   3. Uncomment this step, and set INSTALLER_DIR in "Attach to the release" to desktop/dist/signed.
+      # SignPath downloads the artifact above, signs it, and saves the signed .exe in desktop/dist/signed.
+      #
+      # - name: Sign the installer (SignPath)
+      #   uses: signpath/github-action-submit-signing-request@v2
+      #   with:
+      #     api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+      #     organization-id: "<SIGNPATH_ORGANIZATION_ID>"
+      #     project-slug: "<SIGNPATH_PROJECT_SLUG>"
+      #     signing-policy-slug: "<SIGNPATH_SIGNING_POLICY_SLUG>"
+      #     github-artifact-id: ${{ steps.upload-unsigned.outputs.artifact-id }}
+      #     wait-for-completion: true
+      #     output-artifact-directory: desktop/dist/signed
+      #
+      # - name: Upload the signed installer
+      #   uses: actions/upload-artifact@v7
+      #   with:
+      #     name: ${{ steps.installer.outputs.name }}
+      #     path: desktop/dist/signed/*.exe
+      #     if-no-files-found: error
+
+      - name: Attach to the release
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          # desktop/dist/signed once signing is on.
+          INSTALLER_DIR: desktop/dist
+        run: |
+          $file = Join-Path $env:INSTALLER_DIR (Split-Path "${{ steps.installer.outputs.file }}" -Leaf)
+          if (-not (Test-Path $file)) { throw "$file not found." }
+          gh release view $env:TAG *> $null
+          if ($LASTEXITCODE -eq 0) {
+            # Existing release: only (re)place the installer, keep its title and notes.
+            gh release upload $env:TAG $file --clobber
+          } else {
+            gh release create $env:TAG $file --title "OpenFit $($env:TAG.TrimStart('v'))" --generate-notes
+          }
+          if ($LASTEXITCODE -ne 0) { throw "Couldn't attach the installer to release $env:TAG." }
