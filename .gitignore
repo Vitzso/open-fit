@@ -22,6 +22,9 @@ public/fallback-*.js
 # launcher shortcut contains absolute paths for this PC (recreate with npm run make:shortcut)
 OpenFit.lnk
 
+# desktop app installers (npm run dist:win / dist:mac in desktop/)
+desktop/dist/
+
 # local working folders
 .refactor-backup/
 graphify-out/

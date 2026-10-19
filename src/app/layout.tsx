@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Barlow, Barlow_Condensed } from "next/font/google";
-import BottomNav from "@/components/BottomNav";
+import AppShell from "@/components/AppShell";
 import "./globals.css";
 
 // Self-hosted at build time, so the phone never fetches fonts from Google.
@@ -30,8 +30,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${barlow.variable} ${barlowCondensed.variable}`}>
       <body className="min-h-dvh antialiased">
-        <main className="pt-safe mx-auto max-w-xl px-5 pb-32">{children}</main>
-        <BottomNav />
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );

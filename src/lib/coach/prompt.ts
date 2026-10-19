@@ -49,3 +49,10 @@ export const NOTE_REQUEST = `Write today's short coaching note for the client's 
 - Then: today's calorie and protein target, and how much is left today (use the "Left today" line).
 - Last: one practical tip for today.
 - If there isn't enough data yet, say exactly what to log today instead.`;
+
+/** The request behind the progress report on the desktop dashboard. `days` is the period it covers. */
+export const reportRequest = (days: number) => `Write my progress report for the last ${days} days, for the dashboard on my computer.
+- Use the weekly-review format: **Summary**, **What the data shows**, **Next 7 days**, **Coach's tip**.
+- Base "What the data shows" on the "Period summary" section first, then the other sections. Quote the numbers.
+- Cover all three areas when there is data for them: body weight trend, food (calories and protein vs target) and training (progression of the main lifts).
+- At most about 300 words.`;

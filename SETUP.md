@@ -267,6 +267,42 @@ If you denied camera access by mistake, go to Settings → Apps → Safari → C
 Keep the server running whenever you want to use the app. To start it automatically, see
 `pm2` or Windows Task Scheduler running `npm run start:https` at log-on.
 
+## Desktop app (Windows and Mac): your progress on a big screen
+
+The phone app is for logging. The desktop app is for looking back: a full-size dashboard
+with charts of your body weight, calories and macros, protein, weekly training volume and
+the progression of your main lifts, plus a **progress report** written by your AI coach.
+Pick 7 days, 30 days, 3 months, 6 months or 1 year at the top; every chart, number and the
+report use that range. Hover a chart (or focus it and use the arrow keys) to read exact
+values, or open **Show as table** under it.
+
+It reads the same database as the phone app: it runs OpenFit's own server from your OpenFit
+folder on a private `127.0.0.1` port (never reachable from your network), so nothing is
+copied or synced, and it works whether or not the phone server is running.
+
+**Run it from the OpenFit folder** (after Setup, so the app is installed and built):
+
+```
+npm run desktop:install   # once: downloads Electron (about 100 MB)
+npm run desktop
+```
+
+**Or build an installer** you can start from the Start menu / Applications folder:
+
+```
+cd desktop
+npm run dist:win          # on Windows: desktop\dist\OpenFit Setup <version>.exe
+npm run dist:mac          # on a Mac:   desktop/dist/OpenFit-<version>.dmg
+```
+
+The installed app asks once where your OpenFit folder is and remembers it. On a Mac, set
+OpenFit up with `npm install && npm run build` in that folder first (Setup.cmd is
+Windows-only). The installers aren't code-signed, so Windows SmartScreen and macOS
+Gatekeeper ask you to confirm the first time you open it.
+
+The coach report needs Ollama running, like the Coach tab. Reports are saved, so the
+latest one shows as soon as the dashboard opens.
+
 ## Away from home (Tailscale)
 
 OpenFit is reachable outside your home network through [Tailscale](https://tailscale.com):

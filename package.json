@@ -19,7 +19,9 @@
     "make:icon": "node scripts/make-icon.mjs",
     "make:shortcut": "pwsh -NoProfile -ExecutionPolicy Bypass -File launcher/create-shortcut.ps1",
     "make:certs": "pwsh -NoProfile -ExecutionPolicy Bypass -File launcher/make-certs.ps1",
-    "validate": "pwsh -NoProfile -ExecutionPolicy Bypass -File launcher/validate.ps1"
+    "validate": "pwsh -NoProfile -ExecutionPolicy Bypass -File launcher/validate.ps1",
+    "desktop": "npm --prefix desktop start",
+    "desktop:install": "npm --prefix desktop install && node desktop/node_modules/electron/install.js"
   },
   "overrides": {
     "postcss": "^8.5.30",
