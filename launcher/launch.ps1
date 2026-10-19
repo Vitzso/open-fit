@@ -8,7 +8,7 @@ Set-Location $Root
 $Host.UI.RawUI.WindowTitle = "OpenFit server"
 
 # Shared helpers (Say, Test-Url, Test-NodeReady, Test-InstallNeeded, Test-BuildNeeded, Initialize-Certs...).
-foreach ($part in "common", "node", "app", "git", "remote", "certs", "ollama") {
+foreach ($part in "common", "node", "app", "modules", "git", "remote", "certs", "ollama") {
     . (Join-Path $PSScriptRoot "setup\$part.ps1")
 }
 
@@ -85,6 +85,9 @@ if ($prismaExit -ne 0) {
     $prismaOut | Where-Object { $_.Trim() } | ForEach-Object { Write-Host "    $_" -ForegroundColor DarkGray }
     Fail "Database setup failed (details above)."
 }
+
+# Updated from a version without Pro training? Offer it once (not on a silent start at log-on).
+if (-not $NoBrowser) { Install-ProTraining $Root -Once | Out-Null }
 
 # 3. Ollama (the AI coach): start the tray app if it isn't running.
 if (Test-Url "$OllamaApi/api/version") {

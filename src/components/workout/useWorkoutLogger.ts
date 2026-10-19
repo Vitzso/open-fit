@@ -16,6 +16,7 @@ import {
   initialFields,
   isPlanComplete,
   nextUnfinished,
+  supersetNext,
   validateSetFields,
   type DoneCounts,
   type LastSet,
@@ -141,6 +142,14 @@ export function useWorkoutLogger({ workoutId, unit, last, plan, done: saved, las
       { label: `${exerciseName}: ${weight} ${unit} × ${reps}`, day: dayKey(), workoutId, exercise: exerciseName },
     );
     setFields((cur) => ({ ...cur, notes: "" }));
+    // Supersets (Pro training programs): straight on to the next exercise of the group, and rest
+    // only after a full round.
+    const ss = thisKind !== "warmup" ? supersetNext(plan, exerciseName, { ...done, [exKey(exerciseName)]: doneHere + 1 }) : null;
+    if (ss) {
+      setRestEnd(ss.rest ? Date.now() + restLen * 1000 : null);
+      if (exKey(ss.next.name) !== exKey(exerciseName)) choose(ss.next.name);
+      return;
+    }
     setRestEnd(Date.now() + restLen * 1000);
     // Warm-ups don't use up a planned set; the next set is a work set again.
     if (thisKind !== "warmup") advanceIfFinished(exerciseName);

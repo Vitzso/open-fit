@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { prisma } from "@/lib/db";
 import { isModuleEnabled } from "@/lib/modules/server";
 import { ensureLibrary, libraryPhotos, loadLibrary, searchLibrary } from "@/modules/training-pro/lib/library";
 
@@ -15,10 +16,13 @@ export async function GET(req: NextRequest) {
     }
   }
   const sp = req.nextUrl.searchParams;
+  // Exercises you've logged come first.
+  const logged = await prisma.exercise.findMany({ select: { name: true } });
   const results = searchLibrary(sp.get("q")?.slice(0, 80) ?? "", {
     muscle: sp.get("muscle") || undefined,
     equipment: sp.get("equipment") || undefined,
     limit: 40,
+    prefer: logged.map((e) => e.name),
   });
   return NextResponse.json({
     total: loadLibrary().length,

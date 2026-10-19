@@ -7,7 +7,7 @@ $Root = Split-Path -Parent $PSScriptRoot
 Set-Location $Root
 $Host.UI.RawUI.WindowTitle = "OpenFit setup"
 
-foreach ($part in "common", "node", "git", "env", "app", "ollama", "remote", "certs", "shortcut") {
+foreach ($part in "common", "node", "git", "env", "app", "modules", "ollama", "remote", "certs", "shortcut") {
     . (Join-Path $PSScriptRoot "setup\$part.ps1")
 }
 
@@ -16,7 +16,7 @@ Write-Host "  OpenFit setup" -ForegroundColor Green
 Say "Installs what's missing, skips what's already done. Safe to run again any time."
 
 $results = [ordered]@{}
-$total = 8
+$total = 9
 
 Step 1 $total "Node.js"
 $results["Node.js"] = Install-Node
@@ -39,16 +39,19 @@ if (-not $results["App"]) {
     exit 1
 }
 
-Step 5 $total "AI coach (Ollama + $model)"
+Step 5 $total "Pro training module (optional)"
+$results["Pro training"] = Install-ProTraining $Root
+
+Step 6 $total "AI coach (Ollama + $model)"
 $results["AI coach"] = Install-Ollama $model
 
-Step 6 $total "Remote access (optional: Tailscale, WireGuard, ZeroTier, NetBird...)"
+Step 7 $total "Remote access (optional: Tailscale, WireGuard, ZeroTier, NetBird...)"
 $results["Remote access"] = Install-RemoteAccess $Root
 
-Step 7 $total "HTTPS certificates"
+Step 8 $total "HTTPS certificates"
 $results["HTTPS"] = Initialize-Certs $Root
 
-Step 8 $total "Desktop shortcut"
+Step 9 $total "Desktop shortcut"
 $results["Shortcut"] = Install-Shortcut $Root
 
 Write-Host ""

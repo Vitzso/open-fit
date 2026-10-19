@@ -4,6 +4,7 @@ import "server-only";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import type { PlannedExercise } from "@/lib/programs";
+import { withSupersetGroups } from "./supersets";
 
 export const USER_PREFIX = "user:";
 
@@ -23,6 +24,8 @@ export const ProgramInput = z.object({
         sets: z.number().int().min(1).max(20),
         reps: z.string().trim().min(1).max(20),
         restSec: z.number().int().min(0).max(900),
+        /** Done back to back with the next exercise (a superset). */
+        supersetWithNext: z.boolean().default(false),
       }),
     )
     .min(1, "Add at least one exercise.")
@@ -41,5 +44,5 @@ export async function userPlanFor(templateId: string | null | undefined): Promis
   const id = userProgramId(templateId);
   if (id === null) return null;
   const p = await getUserProgram(id);
-  return p ? p.exercises.map((e) => ({ name: e.name, sets: e.sets, reps: e.reps, restSec: e.restSec })) : null;
+  return p ? withSupersetGroups(p.exercises) : null;
 }

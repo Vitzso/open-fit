@@ -25,10 +25,10 @@ const CONFIDENCE: Record<AiFoodItem["confidence"], string> = { high: "sure", med
  * "Snap or describe your meal": the local AI lists the foods with portions and macros, you
  * adjust, then everything is added in one tap (through the phone's outbox, so it works offline).
  */
-export default function AiFoodPanel({ meal, day }: { meal: Meal; day?: string }) {
+export default function AiFoodPanel({ meal, day, initialText }: { meal: Meal; day?: string; initialText?: string }) {
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
-  const [text, setText] = useState("");
+  const [text, setText] = useState(initialText ?? "");
   const [photo, setPhoto] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);

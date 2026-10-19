@@ -296,7 +296,9 @@ change your data when switched off.
   downloaded once from GitHub when you switch it on, photos fetched as you view them and kept in
   `data/modules/training-pro/`), personal-record alerts, a plate and warm-up calculator under the
   weight field, a set-type picker (warm-up / work / drop), and **Train → Your programs** to build your own
-  workouts next to the ready-made ones.
+  workouts next to the ready-made ones, including supersets (back to back, rest after the round).
+  Setup asks whether you want it (older installs are asked once on the next launch); you can also run
+  `node scripts/module.mjs enable training-pro`.
 
 For developers: a module is a folder `src/modules/<id>/` with a `manifest.ts`, listed in
 `src/lib/modules/registry.ts`. Core screens check `isModuleEnabled("<id>")` before showing its pieces.

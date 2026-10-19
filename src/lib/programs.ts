@@ -6,6 +6,8 @@ export interface PlannedExercise {
   sets: number;
   reps: string; // shown as the target, e.g. "8–10" or "30 s"
   restSec: number;
+  /** Superset letter ("A", "B"…): exercises with the same letter are done back to back (Pro training programs). */
+  group?: string;
 }
 
 export interface WorkoutTemplate {

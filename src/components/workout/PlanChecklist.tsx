@@ -63,6 +63,7 @@ function PlanRow({
         <span className="min-w-0 flex-1">
           <span className={`block truncate text-[17px] ${current ? "font-semibold" : ""}`}>{item.name}</span>
           <span className="block text-sm text-muted">
+            {item.group && <span className="mr-1.5 rounded-full bg-plate-blue/20 px-1.5 py-0.5 text-xs font-semibold text-plate-blue">Superset {item.group}</span>}
             {item.sets} × {item.reps}
           </span>
         </span>

@@ -170,6 +170,7 @@ model UserProgramExercise {
   sets      Int
   reps      String // "8", "8-10", "30 s"
   restSec   Int
+  supersetWithNext Boolean @default(false) // done back to back with the next exercise, resting after the round
 
   @@index([programId])
 }

@@ -2,6 +2,25 @@
 
 All notable changes to OpenFit. Versions follow [Semantic Versioning](https://semver.org).
 
+## [0.1.3] - 2026-10-19
+
+### Added
+
+- **Setup offers Pro training.** A new Setup step asks whether to switch on the Pro training module (and
+  downloads its exercise library). Older installs are asked once on their next launch; the answer is
+  saved as `PRO_TRAINING_OFFERED` in `.env`, so you're never asked twice. Scripted:
+  `node scripts/module.mjs status|enable|disable training-pro`.
+- **Supersets** (Pro training): tick "Superset with the next exercise" in your program; the logger goes
+  back and forth between them and starts the rest timer only after the round.
+- **Log food from the coach chat**: messages that describe a meal ("I had 2 eggs and toast") and coach
+  replies that suggest one with numbers get a link that opens AI food logging with the text filled in.
+
+### Changed
+
+- **Smarter exercise search** (Pro training): exercises you've logged and gym staples come first, then
+  names that contain every word, with stretches and cardio last. Common gym names work too: "back squat",
+  "OHP", "RDL", "pull-ups", "skull crushers".
+
 ## [0.1.2] - 2026-10-19
 
 ### Added

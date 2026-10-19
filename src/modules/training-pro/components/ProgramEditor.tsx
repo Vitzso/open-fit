@@ -19,7 +19,7 @@ export default function ProgramEditor({ programId, initial, recent }: { programI
   const [name, setName] = useState(initial?.name ?? "");
   const [notes, setNotes] = useState(initial?.notes ?? "");
   const [rows, setRows] = useState<Row[]>(() =>
-    (initial?.exercises.length ? initial.exercises : [{ name: "", sets: 3, reps: "8-10", restSec: 90 }]).map((e) => ({ ...e, key: nextKey++ })),
+    (initial?.exercises.length ? initial.exercises : [{ name: "", sets: 3, reps: "8-10", restSec: 90, supersetWithNext: false }]).map((e) => ({ ...e, key: nextKey++ })),
   );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -107,11 +107,17 @@ export default function ProgramEditor({ programId, initial, recent }: { programI
                 </select>
               </div>
             </div>
+            {i < rows.length - 1 && (
+              <label className="flex items-center gap-2 text-[15px]">
+                <input type="checkbox" className="size-5 accent-[var(--color-plate-blue)]" checked={r.supersetWithNext} onChange={(e) => update(r.key, { supersetWithNext: e.target.checked })} />
+                Superset with the next exercise (back to back, rest after both)
+              </label>
+            )}
           </li>
         ))}
       </ol>
 
-      <button type="button" className={`${btnSecondary} w-full`} onClick={() => setRows((rs) => [...rs, { key: nextKey++, name: "", sets: 3, reps: "8-10", restSec: 90 }])}>
+      <button type="button" className={`${btnSecondary} w-full`} onClick={() => setRows((rs) => [...rs, { key: nextKey++, name: "", sets: 3, reps: "8-10", restSec: 90, supersetWithNext: false }])}>
         <Plus size={18} /> Add exercise
       </button>
       {error && <p className="text-[15px] text-plate-red">{error}</p>}

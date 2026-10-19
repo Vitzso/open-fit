@@ -76,3 +76,20 @@ export function validateSetFields(f: SetFields): { ok: true; set: ValidSet } | {
     set: { exerciseName: f.exercise.trim(), reps, weight, rpe: f.rpe ? Number(f.rpe) : null, notes: f.notes || null },
   };
 }
+
+/**
+ * Supersets: after a work set of an exercise in a superset group, the next exercise of the group
+ * that still has sets left, and whether to rest first (only after a full round, i.e. when it wraps
+ * back to an earlier exercise). null when the exercise isn't in a group or the group is finished.
+ */
+export function supersetNext(plan: PlannedExercise[] | null, current: string, doneAfter: DoneCounts): { next: PlannedExercise; rest: boolean } | null {
+  const p = findPlanned(plan, current);
+  if (!plan || !p?.group) return null;
+  const members = plan.filter((e) => e.group === p.group);
+  const i = members.findIndex((e) => exKey(e.name) === exKey(current));
+  for (let k = 1; k <= members.length; k++) {
+    const m = members[(i + k) % members.length];
+    if ((doneAfter[exKey(m.name)] ?? 0) < m.sets) return { next: m, rest: i + k >= members.length };
+  }
+  return null;
+}

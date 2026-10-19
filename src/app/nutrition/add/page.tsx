@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 export default async function AddFoodPage({
   searchParams,
 }: {
-  searchParams: Promise<{ meal?: string; day?: string }>;
+  searchParams: Promise<{ meal?: string; day?: string; ai?: string }>;
 }) {
   const q = await searchParams;
   const meal = asMeal(q.meal);
@@ -37,7 +37,7 @@ export default async function AddFoodPage({
         subtitle={day ? `Adding to ${formatDay(day)}` : "Type it in, or tap something you had recently."}
         back={day ? `/nutrition?day=${day}` : "/nutrition"}
       />
-      <AddFoodPanel defaultMeal={meal} recent={recent} day={day} />
+      <AddFoodPanel defaultMeal={meal} recent={recent} day={day} aiText={q.ai?.slice(0, 1000)} />
     </>
   );
 }

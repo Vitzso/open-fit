@@ -43,7 +43,7 @@ $RequiredFiles = @(
     "OpenFit.cmd", "Setup.cmd", "launcher\launch.ps1", "launcher\setup.ps1", "launcher\make-certs.ps1",
     "launcher\create-shortcut.ps1", "launcher\openfit.ico",
     "launcher\setup\common.ps1", "launcher\setup\node.ps1", "launcher\setup\git.ps1", "launcher\setup\env.ps1",
-    "launcher\setup\app.ps1", "launcher\setup\ollama.ps1", "launcher\setup\remote.ps1",
+    "launcher\setup\app.ps1", "launcher\setup\ollama.ps1", "launcher\setup\remote.ps1", "launcher\setup\modules.ps1",
     "launcher\setup\certs.ps1", "launcher\setup\shortcut.ps1"
 )
 $missingFiles = @($RequiredFiles | Where-Object { -not (Test-Path (Join-Path $Root $_)) })

@@ -4,6 +4,7 @@
 import "server-only";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import { rankExercises } from "./search";
 
 export const LIBRARY_SOURCE = "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main";
 export const LIBRARY_DIR = path.join(process.cwd(), "data", "modules", "training-pro");
@@ -73,21 +74,12 @@ export function findLibraryExercise(name: string): LibraryExercise | null {
   return loadLibrary().find((e) => norm(e.name) === key) ?? null;
 }
 
-/** Search by words in the name, muscles or equipment; the best matches (name starts with it) first. */
-export function searchLibrary(q: string, opts: { muscle?: string; equipment?: string; limit?: number } = {}): LibraryExercise[] {
-  const words = norm(q).split(" ").filter(Boolean);
-  const scored = loadLibrary()
-    .filter((e) => (!opts.muscle || e.primaryMuscles.includes(opts.muscle)) && (!opts.equipment || (e.equipment ?? "none") === opts.equipment))
-    .map((e) => {
-      const hay = norm(`${e.name} ${e.primaryMuscles.join(" ")} ${e.equipment ?? ""}`);
-      if (!words.every((w) => hay.includes(w))) return null;
-      const name = norm(e.name);
-      const score = (name.startsWith(words.join(" ")) ? 0 : 1) + (e.category === "strength" || e.category === "powerlifting" ? 0 : 0.5) + name.length / 1000;
-      return { e, score };
-    })
-    .filter((x): x is { e: LibraryExercise; score: number } => x !== null)
-    .sort((a, b) => a.score - b.score);
-  return scored.slice(0, opts.limit ?? 30).map((x) => x.e);
+/** Search by words in the name, muscles or equipment (ranking: see rankExercises). */
+export function searchLibrary(
+  q: string,
+  opts: { muscle?: string; equipment?: string; limit?: number; prefer?: Iterable<string> } = {},
+): LibraryExercise[] {
+  return rankExercises(loadLibrary(), q, opts);
 }
 
 /** Photo URLs for a library exercise (served and cached by the module's image route). */

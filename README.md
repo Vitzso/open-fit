@@ -35,7 +35,7 @@ No subscription, no account, no cloud. Your data never leaves your home.
 | 🍎 **Food** | **Snap your plate or just say what you ate**: the local AI lists the foods with portions and macros, you check and add them in one tap. Or scan a barcode (Open Food Facts, millions of products), type it in, or re-log something recent. |
 | ⚖️ **Body weight** | One weigh-in a day, a 7-day trend line, your goal, and an honest verdict on your pace. Weight, steps and active calories can arrive from **Apple Health** by themselves. |
 | 📶 **Works with no signal** | Everything you log is saved on the phone first and syncs to your PC when it's reachable: gym basements and dead zones never lose a set. |
-| 🧩 **Modules** | Optional extras you switch on in Settings. **Pro training** adds an 870-exercise library with photos, personal-record alerts, a plate and warm-up calculator, warm-up and drop sets, and your own programs. |
+| 🧩 **Modules** | Optional extras you switch on in Settings. **Pro training** adds an 870-exercise library with photos, personal-record alerts, a plate and warm-up calculator, warm-up and drop sets, supersets, and your own programs. Setup offers to switch it on. |
 | 📥 **Bring your history** | Import from **MyFitnessPal**, **Strong** and **Hevy**, or restore an OpenFit backup. Duplicates are skipped, so importing twice is safe. |
 | 🤖 **AI coach** | A local model (Gemma by default) that reads your real numbers: a short note every morning, weekly reviews, and answers to any training or nutrition question. Safety checks built in. |
 | 🖥️ **Desktop dashboard** | A Windows and Mac app with big charts of your progress and a written progress report from the coach. |

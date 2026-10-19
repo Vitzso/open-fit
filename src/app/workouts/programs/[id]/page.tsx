@@ -44,7 +44,7 @@ export default async function ProgramEditPage({ params }: { params: Promise<{ id
         programId={id}
         initial={
           program
-            ? { name: program.name, notes: program.notes ?? undefined, exercises: program.exercises.map(({ name, sets, reps, restSec }) => ({ name, sets, reps, restSec })) }
+            ? { name: program.name, notes: program.notes ?? undefined, exercises: program.exercises.map(({ name, sets, reps, restSec, supersetWithNext }) => ({ name, sets, reps, restSec, supersetWithNext })) }
             : null
         }
         recent={recent.map((e) => e.name)}
