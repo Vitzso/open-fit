@@ -2,6 +2,35 @@
 
 All notable changes to OpenFit. Versions follow [Semantic Versioning](https://semver.org).
 
+## [0.1.7] - 2026-10-20
+
+### Added
+
+- **Choose where the app goes again.** The installer asks for a folder; an earlier install's folder is
+  filled in, so keeping it updates the app in place. It won't continue while the folder is an OpenFit
+  data folder (or would become one: picking `E:\Projects` installs to `E:\Projects\OpenFit`).
+- **Finds the OpenFit you already have.** The first time the app opens it looks where your OpenFit
+  shortcuts point and in the default folder, and offers to use that OpenFit, updating it when the app
+  has a newer one, instead of asking you to find the folder.
+- **A proper setup screen.** Installing, finding your OpenFit, updating, progress and errors are now
+  screens in the app window in OpenFit's own design, instead of plain Windows message boxes, with a
+  **Source code on GitHub** link and the license on every one. Pro training is a switch, on by default,
+  passed to Setup so Setup doesn't ask. The Windows installer shows the MIT license.
+
+### Changed
+
+- **Setup is much faster.** A fresh Setup on a PC with Node.js and Ollama took 98 s and now takes about
+  55 s, with Pro training included:
+  - The installer's OpenFit comes prebuilt, so Setup skips the minute-long `next build`.
+  - The coach model (several GB on a new PC) downloads in the background while the rest runs.
+  - A first install uses `npm ci`.
+  - All questions come first, so Setup then runs by itself.
+
+### Fixed
+
+- The "does the app need rebuilding?" check searched every `package.json` in `node_modules`: it took
+  about 18 seconds on every start of OpenFit, and any package update made the launcher rebuild the app.
+
 ## [0.1.6] - 2026-10-19
 
 ### Fixed

@@ -19,9 +19,21 @@ function Enable-Module($root, $id) {
     return $r.ExitCode -eq 0
 }
 
+# The Pro training answer, asked at the start of Setup so the rest runs unattended: $given (from the
+# desktop app's checkbox) if set, "" when there's nothing to ask (it's on, or you answered before),
+# otherwise the answer to the question. Install-ProTraining -Answer applies it once the app is installed.
+function Read-ProTrainingAnswer($root, [string]$given) {
+    if ($given -in "yes", "no") { return $given }
+    if (Get-EnvValue (Join-Path $root ".env") "PRO_TRAINING_OFFERED") { return "" }
+    if ((Test-Path (Join-Path $root "node_modules")) -and (Get-ModuleState $root "training-pro") -eq "on") { return "" }
+    Say $ProTrainingPitch
+    if (Ask-YesNo "Add Pro training?" $true) { return "yes" } else { return "no" }
+}
+
 # Asks whether to add Pro training, unless it's on already or you answered before.
 # -Once: only ask if it was never offered (the launcher uses this for people who updated).
-function Install-ProTraining($root, [switch]$Once) {
+# -Answer yes|no: decided already (Read-ProTrainingAnswer or the desktop app), so don't ask.
+function Install-ProTraining($root, [switch]$Once, [string]$Answer) {
     Push-Location $root
     try {
         $envFile = Join-Path $root ".env"
@@ -36,14 +48,18 @@ function Install-ProTraining($root, [switch]$Once) {
             return $false
         }
         $answered = Get-EnvValue $envFile "PRO_TRAINING_OFFERED"
-        if ($answered) {
+        if ($Answer -in "yes", "no") {
+            $yes = $Answer -eq "yes"
+        } elseif ($answered -eq "yes" -and -not $Once) {
+            $yes = $true # you said yes before but it's off (a new database, or it failed then): switch it on
+        } elseif ($answered) {
             if (-not $Once) { Say "Pro training is off. Switch it on any time in Settings, Modules." Gray }
             return $false
+        } else {
+            if ($Once) { Write-Host ""; Say "New in this version: the Pro training module." Cyan }
+            Say $ProTrainingPitch
+            $yes = Ask-YesNo "Add Pro training?" $true
         }
-
-        if ($Once) { Write-Host ""; Say "New in this version: the Pro training module." Cyan }
-        Say $ProTrainingPitch
-        $yes = Ask-YesNo "Add Pro training?" $true
         Set-EnvValue $envFile "PRO_TRAINING_OFFERED" ($(if ($yes) { "yes" } else { "no" }))
         if (-not $yes) { Say "Not added. You can switch it on any time in Settings, Modules." Gray; return $false }
         if (Enable-Module $root "training-pro") { Say "Pro training is on." Green; return $true }

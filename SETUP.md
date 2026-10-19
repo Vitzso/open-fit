@@ -3,23 +3,35 @@
 ## Quick start: one click
 
 **Easiest:** install the desktop app (`OpenFit-Setup-x.y.z.exe` from the
-[latest release](https://github.com/Vitzso/open-fit/releases)). On a PC without OpenFit it
-installs it (in your user folder, or one you choose), opens Setup in its own window for the
-steps below, then shows your dashboard. The app is the **OpenFit Dashboard** shortcut; start the phone app with the
-**OpenFit server** shortcut Setup adds.
+[latest release](https://github.com/Vitzso/open-fit/releases)). The installer asks where to put
+the app (keep the folder it shows to update an earlier install; don't pick your OpenFit data
+folder, the app finds that itself). When the app first opens:
+
+- **OpenFit already on this PC** (found from its shortcuts): use it, and update it if this app
+  has a newer version. Your data, settings and passcode are kept.
+- **No OpenFit yet:** install it (in your user folder, or one you choose). Tick **Add Pro training**
+  if you want the exercise library, personal records and the rest of the module.
+
+Setup then opens in its own window for the steps below and shows your dashboard when it's done.
+The app is the **OpenFit Dashboard** shortcut; start the phone app with the **OpenFit server**
+shortcut Setup adds.
 
 **Or by hand:** double-click **`Setup.cmd`** in the OpenFit folder. It installs whatever is missing and
-skips whatever is already done, so it's also the "repair" button:
+skips whatever is already done, so it's also the "repair" button. Its questions all come first;
+after that it runs by itself:
 
 1. Node.js (via winget, Windows' built-in installer)
 2. Git for Windows, for the OpenSSL that makes HTTPS certificates
-3. Your settings file (`.env`), asking you to choose a passcode (typed hidden)
-4. App packages, database and build
-5. Ollama and the coach model (`gemma4:latest`, several GB the first time)
-6. Remote access, if you want it (for using OpenFit away from home): Tailscale, WireGuard,
+3. Your settings file (`.env`): choose a passcode (typed hidden), and whether to add Pro training
+4. Remote access, if you want it (for using OpenFit away from home): Tailscale, WireGuard,
    ZeroTier, NetBird or your own VPN, see [Away from home](#away-from-home-tailscale-wireguard-zerotier-netbird-or-your-own)
-7. HTTPS certificates
-8. The OpenFit shortcut on your Desktop
+5. Ollama and the coach model (`gemma4:latest`, several GB the first time). The model downloads
+   in the background while the next steps run.
+6. App packages, database and build (the installer's copy of OpenFit comes prebuilt, so the build
+   is skipped)
+7. Pro training, if you said yes
+8. HTTPS certificates
+9. The OpenFit shortcut on your Desktop
 
 Something acting up (the app won't start, HTTPS stopped working, you moved the folder)?
 Double-click **`Validate.cmd`** (or run `npm run validate`). It checks that the settings file,

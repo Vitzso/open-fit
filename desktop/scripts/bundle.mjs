@@ -34,6 +34,25 @@ if (workingTree) {
   }
 }
 
+// The app prebuilt (.next without its cache, plus the offline-app files next-pwa writes to public/), so
+// Setup doesn't spend a minute running `next build` on every PC. Built from the same files as the bundle:
+// skipped (Setup builds instead) when HEAD has uncommitted changes and --working-tree isn't given.
+if (process.argv.includes("--no-build")) {
+  console.log("Not including a prebuilt app (--no-build): Setup will build it.");
+} else if (dirty && !workingTree) {
+  console.warn("Not including a prebuilt app: the working tree differs from HEAD. Setup will build it.");
+} else {
+  console.log("Building the app to include it prebuilt...");
+  execFileSync("npm", ["run", "build"], { cwd: repo, stdio: ["ignore", "ignore", "inherit"], shell: true });
+  const skip = new Set(["cache", "trace", "diagnostics", "types"]);
+  for (const entry of fs.readdirSync(path.join(repo, ".next"))) {
+    if (!skip.has(entry)) fs.cpSync(path.join(repo, ".next", entry), path.join(out, ".next", entry), { recursive: true });
+  }
+  for (const f of fs.readdirSync(path.join(repo, "public"))) {
+    if (/^(sw\.js|workbox-.*\.js|swe-worker-.*\.js|fallback-.*\.js)$/.test(f)) fs.cpSync(path.join(repo, "public", f), path.join(out, "public", f));
+  }
+}
+
 // The list of installed files (saved with them), so a later update can remove files a new version no longer has.
 const { version } = JSON.parse(fs.readFileSync(path.join(out, "package.json"), "utf8"));
 fs.writeFileSync(path.join(out, "openfit-files.json"), JSON.stringify({ version, files }, null, 1));

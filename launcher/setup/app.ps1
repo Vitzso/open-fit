@@ -54,9 +54,13 @@ function Test-BuildNeeded($root) {
     $buildId = Join-Path $root ".next\BUILD_ID"
     if (-not (Test-Path $buildId)) { return $true }
     $built = (Get-Item $buildId).LastWriteTime
-    $paths = "src", "prisma", "next.config.mjs", "package.json", "postcss.config.mjs", "tsconfig.json" |
-        ForEach-Object { Join-Path $root $_ } | Where-Object { Test-Path $_ }
-    $changed = Get-ChildItem $paths -Recurse -File |
+    # Folders are searched; single files are checked on their own. (Get-ChildItem package.json -Recurse
+    # would search every package.json under the folder, node_modules included: slow, and any package
+    # install then looked like a source change, so every start after an update rebuilt the app.)
+    $dirs = "src", "prisma" | ForEach-Object { Join-Path $root $_ } | Where-Object { Test-Path $_ }
+    $files = "next.config.mjs", "package.json", "postcss.config.mjs", "tsconfig.json" |
+        ForEach-Object { Join-Path $root $_ } | Where-Object { Test-Path $_ } | ForEach-Object { Get-Item $_ }
+    $changed = @($files) + @(Get-ChildItem $dirs -Recurse -File) |
         Where-Object { $_.LastWriteTime -gt $built -and $_.Extension -ne ".db" -and $_.Name -notlike "*.db-journal" } |
         Select-Object -First 1
     return [bool]$changed
@@ -72,7 +76,12 @@ function Install-App($root) {
                 Say "Missing packages: $($missing -join ', ')." Yellow
             }
             Say "Installing packages (about a minute)..."
-            if (-not (Invoke-Quiet "Installing packages" { npm install --no-fund --no-audit })) { return $false }
+            # A first install installs exactly what package-lock.json lists (npm ci skips working out
+            # versions, so it's quicker); later ones only add what changed.
+            $fresh = -not (Test-Path (Join-Path $root "node_modules")) -and (Test-Path (Join-Path $root "package-lock.json"))
+            $ok = if ($fresh) { Invoke-Quiet "Installing packages" { npm ci --no-fund --no-audit --prefer-offline } }
+                  else { Invoke-Quiet "Installing packages" { npm install --no-fund --no-audit --prefer-offline } }
+            if (-not $ok) { return $false }
             Set-InstallDone $root
         } else {
             Say "Packages are already installed; skipping npm install."
