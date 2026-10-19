@@ -185,6 +185,7 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
-document.getElementById("source").addEventListener("click", () => bridge.openSource());
+document.getElementById("source").addEventListener("click", () => bridge.openSource("source"));
+document.getElementById("license").addEventListener("click", () => bridge.openSource("license"));
 bridge.onScreen(show);
 bridge.ready();

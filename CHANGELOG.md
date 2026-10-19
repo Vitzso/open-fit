@@ -2,6 +2,15 @@
 
 All notable changes to OpenFit. Versions follow [Semantic Versioning](https://semver.org).
 
+## [0.1.8] - 2026-10-20
+
+### Changed
+
+- **No more installer wizard.** `OpenFit-Setup.exe` is one-click again: a progress bar for a few seconds,
+  then the OpenFit setup screen opens, where every choice is made (where OpenFit goes, using or updating
+  the one you have, Pro training). The app's own files go in their own folder in your user profile, and
+  an earlier install is updated in place. **MIT license** on the setup screen now opens the license.
+
 ## [0.1.7] - 2026-10-20
 
 ### Added

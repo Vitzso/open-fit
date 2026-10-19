@@ -56,7 +56,8 @@ ipcMain.handle("setup:pick-folder", async (event) => {
   });
   return pick.canceled ? null : (pick.filePaths[0] ?? null);
 });
-ipcMain.on("setup:open-source", () => void shell.openExternal(SOURCE_URL));
+// Only these two addresses: the page can't ask for any other.
+ipcMain.on("setup:open-source", (_event, page) => void shell.openExternal(page === "license" ? `${SOURCE_URL}/blob/main/LICENSE` : SOURCE_URL));
 
 function loadSetupUi(win) {
   uiReady = new Promise((resolve) => ipcMain.once("setup:ready", resolve));
