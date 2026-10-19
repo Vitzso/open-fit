@@ -5,8 +5,8 @@
 **Easiest:** install the desktop app (`OpenFit-Setup-x.y.z.exe` from the
 [latest release](https://github.com/Vitzso/open-fit/releases)). On a PC without OpenFit it
 installs it (in your user folder, or one you choose), opens Setup in its own window for the
-steps below, then shows your dashboard. Start the phone app with the **OpenFit server**
-shortcut Setup adds.
+steps below, then shows your dashboard. The app is the **OpenFit Dashboard** shortcut; start the phone app with the
+**OpenFit server** shortcut Setup adds.
 
 **Or by hand:** double-click **`Setup.cmd`** in the OpenFit folder. It installs whatever is missing and
 skips whatever is already done, so it's also the "repair" button:

@@ -54,7 +54,7 @@ Step 8 $total "HTTPS certificates"
 $results["HTTPS"] = Initialize-Certs $Root
 
 Step 9 $total "Desktop shortcut"
-# The desktop app's installer already put "OpenFit" (the dashboard) on the Desktop; this one starts the server.
+# Run from the desktop app: name it so it reads clearly next to the app's "OpenFit Dashboard" shortcut.
 $results["Shortcut"] = if ($FromDesktop) { Install-Shortcut $Root "OpenFit server" } else { Install-Shortcut $Root }
 
 Write-Host ""

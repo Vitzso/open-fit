@@ -1,6 +1,6 @@
 {
   "name": "openfit",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "private": true,
   "license": "MIT",
   "description": "Self-hosted workout, body-weight and nutrition tracker PWA with barcode scanning and a local Ollama AI coach.",

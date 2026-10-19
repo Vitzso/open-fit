@@ -2,6 +2,20 @@
 
 All notable changes to OpenFit. Versions follow [Semantic Versioning](https://semver.org).
 
+## [0.1.6] - 2026-10-19
+
+### Fixed
+
+- **Updating the desktop app could delete the folder it was installed in.** Windows installers made with
+  electron-builder remove the old version's whole install folder before installing the new one. If you had
+  chosen your OpenFit folder as the install folder, that meant your database and settings (in testing, a
+  running OpenFit server happened to block it, so the update failed with "OpenFit cannot be closed"
+  instead). The installer is now one-click: it always installs to its own folder
+  (`AppData\Local\Programs\OpenFit`), finishes in about half a minute and opens the app. Uninstalling or
+  updating now removes only the app's own files, never anything else in the folder.
+- The app's Desktop shortcut is now **OpenFit Dashboard**, so installing it no longer replaces an existing
+  **OpenFit** shortcut that starts the server (and uninstalling no longer deletes it).
+
 ## [0.1.5] - 2026-10-19
 
 ### Fixed
