@@ -1,6 +1,6 @@
-import FoodEntryForm from "@/components/food/FoodEntryForm";
+import AddFoodPanel from "@/components/food/AddFoodPanel";
 import PageHeader from "@/components/PageHeader";
-import RecentFoods, { type RecentFood } from "@/components/RecentFoods";
+import type { RecentFood } from "@/components/RecentFoods";
 import { prisma } from "@/lib/db";
 import { formatDay, pastDayParam } from "@/lib/dates";
 import { asMeal } from "@/lib/nutrition";
@@ -37,8 +37,7 @@ export default async function AddFoodPage({
         subtitle={day ? `Adding to ${formatDay(day)}` : "Type it in, or tap something you had recently."}
         back={day ? `/nutrition?day=${day}` : "/nutrition"}
       />
-      <FoodEntryForm defaultMeal={meal} day={day} />
-      <RecentFoods foods={recent} meal={meal} day={day} />
+      <AddFoodPanel defaultMeal={meal} recent={recent} day={day} />
     </>
   );
 }

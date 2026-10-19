@@ -1,3 +1,4 @@
+import { useId } from "react";
 import type { Macros, Meal } from "@/lib/nutrition";
 import { input, label } from "@/lib/ui";
 import MacroStat from "./MacroStat";
@@ -17,11 +18,14 @@ export default function PortionFields({
   onMeal: (m: Meal) => void;
   scaled: Macros;
 }) {
+  const id = useId();
   return (
     <div className="grid grid-cols-2 gap-3">
       <div>
-        <span className={label}>Amount (g / ml)</span>
-        <input className={input} inputMode="decimal" value={grams} onChange={(e) => onGrams(e.target.value)} />
+        <label htmlFor={id} className={label}>
+          Amount (g / ml)
+        </label>
+        <input id={id} className={input} inputMode="decimal" value={grams} onChange={(e) => onGrams(e.target.value)} />
       </div>
       <MealSelect meal={meal} onChange={onMeal} />
       <div className="col-span-2 grid grid-cols-4 gap-2 rounded-xl bg-raised p-3 text-center">

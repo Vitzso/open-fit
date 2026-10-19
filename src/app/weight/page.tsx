@@ -31,7 +31,17 @@ export default async function WeightPage() {
   const latest = rows.at(-1);
   const weekAgo = [...rows].reverse().find((r) => r.day <= daysAgoKey(7));
   const trend = latest && weekAgo ? trendSentence(latest.weightKg - weekAgo.weightKg, weekAgo.weightKg, unit, disp(latest.weightKg) - disp(weekAgo.weightKg)) : null;
-  const toGoal = latest && s.goalWeightKg ? disp(latest.weightKg) - disp(s.goalWeightKg) : null;
+  const toGoal = latest && s.goalWeightKg ? round(disp(latest.weightKg) - disp(s.goalWeightKg), 1) : null;
+  // Which side of the goal you started from (first weigh-in shown), to tell "to go" from "past it".
+  const startSide = rows.length && s.goalWeightKg ? Math.sign(disp(rows[0].weightKg) - disp(s.goalWeightKg)) : 0;
+  const goalText =
+    toGoal == null
+      ? null
+      : toGoal === 0
+        ? "You've reached your goal weight."
+        : startSide !== 0 && Math.sign(toGoal) !== startSide
+          ? `You're past your goal of ${disp(s.goalWeightKg!)} ${unit} by ${Math.abs(toGoal)} ${unit}.`
+          : `${Math.abs(toGoal)} ${unit} to your goal of ${disp(s.goalWeightKg!)} ${unit}.`;
 
   return (
     <div style={{ "--accent": "var(--color-plate-yellow)" } as React.CSSProperties}>
@@ -46,11 +56,7 @@ export default async function WeightPage() {
         <p className={`mt-2 text-[16px] leading-snug ${trend?.tone ?? "text-muted"}`}>
           {trend ? trend.text : "Log another weigh-in next week to see your trend."}
         </p>
-        {toGoal != null && (
-          <p className="mt-1 text-[15px] text-muted">
-            {Math.abs(toGoal) < 0.1 ? "You've reached your goal weight." : `${Math.abs(round(toGoal, 1))} ${unit} to your goal of ${disp(s.goalWeightKg!)} ${unit}.`}
-          </p>
-        )}
+        {goalText && <p className="mt-1 text-[15px] text-muted">{goalText}</p>}
         {rows.length >= 2 && (
           <>
             <div className="mt-4">

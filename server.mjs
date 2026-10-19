@@ -62,7 +62,12 @@ async function startServer() {
   const handle = app.getRequestHandler();
   await app.prepare();
 
-  const server = createServer({ key: readFileSync(keyPath), cert: readFileSync(certPath) }, (req, res) => handle(req, res));
+  const server = createServer({ key: readFileSync(keyPath), cert: readFileSync(certPath) }, (req, res) => {
+    // Nothing sits in front of this server, so the only trustworthy client address is the
+    // connection's own. Overwrite whatever the client sent: the login rate limit keys on it.
+    req.headers["x-forwarded-for"] = req.socket.remoteAddress ?? "unknown";
+    return handle(req, res);
+  });
   // Keep idle connections open between taps. Node's 5 s default meant the phone
   // usually had to open a new TCP + TLS connection for each tap: two extra round
   // trips (~0.6 s over mobile data/Tailscale) before the request even started.

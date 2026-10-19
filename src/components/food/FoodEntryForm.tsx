@@ -21,18 +21,25 @@ export default function FoodEntryForm({
   product,
   barcode,
   defaultMeal,
+  meal: sharedMeal,
+  onMeal,
   day,
 }: {
   product?: FoodProductData;
   barcode?: string;
   defaultMeal: Meal;
+  /** Pass `meal` and `onMeal` to share the meal choice with other controls on the page. */
+  meal?: Meal;
+  onMeal?: (m: Meal) => void;
   /** Log to a past day instead of today. */
   day?: string;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const [meal, setMeal] = useState<Meal>(defaultMeal);
+  const [ownMeal, setOwnMeal] = useState<Meal>(defaultMeal);
+  const meal = sharedMeal ?? ownMeal;
+  const setMeal = onMeal ?? setOwnMeal;
   const [grams, setGrams] = useState(String(product?.servingQuantityG ?? 100));
   // Products without nutrition data fall back to editable per-100 g values.
   const [per100g, setPer100g] = useState<Per100g>(product?.per100g ?? { kcal: 0, protein: 0, carbs: 0, fat: 0 });

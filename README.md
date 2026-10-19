@@ -1,125 +1,149 @@
+<div align="center">
+
+<img src="launcher/openfit.png" width="96" alt="OpenFit app icon: a dumbbell on a green tile" />
+
 # OpenFit
 
-A self-hosted, subscription-free fitness PWA for your iPhone. It combines:
+**Your own fitness app. Workouts, food, body weight and an AI coach, all running on your PC.**<br />
+No subscription, no account, no cloud. Your data never leaves your home.
 
-- **Workout logging** (openGym-style): exercises, sets, reps, weight, RPE and notes
-- **Body-weight tracking** with a trend chart
-- **Nutrition logging** (OpenNutriTracker-style): calories and macros, with a **camera barcode scanner**
-  backed by the free Open Food Facts API
-- **A local AI coach** running on your own PC through **Ollama**, which reads your last 7 days of data
-- **A desktop app for Windows and Mac** (`desktop/`): a big-screen dashboard with progress charts
-  for weight, food and training, and AI coach progress reports ([SETUP.md](SETUP.md#desktop-app-windows-and-mac-your-progress-on-a-big-screen))
+[![Version](https://img.shields.io/github/v/release/Vitzso/open-fit?label=version&color=34b46a)](https://github.com/Vitzso/open-fit/releases)
+[![License: MIT](https://img.shields.io/badge/license-MIT-4a86f7)](LICENSE)
+![iPhone PWA](https://img.shields.io/badge/iPhone-PWA-f4f5f7?logo=apple&logoColor=white)
+![Windows and macOS](https://img.shields.io/badge/desktop-Windows%20%7C%20macOS-f2c335)
+![Local AI with Ollama](https://img.shields.io/badge/AI%20coach-Ollama%20(local)-e5484d)
 
-All data lives in a SQLite file on your PC. **→ See [SETUP.md](SETUP.md) to get it running on your phone.**
+[**Get started**](#-get-started) · [Features](#-what-you-get) · [Desktop app](#-desktop-app) · [Privacy](#-private-by-design) · [Full setup guide](SETUP.md) · [Changelog](CHANGELOG.md)
 
-## Launcher (Windows)
+<br />
 
-**New PC?** Double-click **`Setup.cmd`**: it installs Node.js, Ollama and the coach model,
-creates your settings and passcode, HTTPS certificates and a Desktop shortcut, and skips
-anything already done (see [SETUP.md](SETUP.md#quick-start-one-click)).
+<img src="docs/screenshots/phone-today.png" width="19%" alt="Today: calories left, macros and the coach's daily note" />
+<img src="docs/screenshots/phone-train.png" width="19%" alt="A ready-made workout with exercise photos and form tips" />
+<img src="docs/screenshots/phone-food.png" width="19%" alt="The food log, by meal" />
+<img src="docs/screenshots/phone-weight.png" width="19%" alt="Body weight with a 7-day trend line" />
+<img src="docs/screenshots/phone-coach.png" width="19%" alt="Chatting with the local AI coach" />
 
-Double-click **OpenFit** (the green dumbbell icon) in the project folder. It runs the
-setup on first run, checks the database, starts Ollama if needed, rebuilds only
-when the code changed, starts the server (HTTPS if `certs/` exists), opens your browser
-and prints the address to use on your iPhone. Close the window to stop OpenFit.
+</div>
 
-- No shortcut yet, or moved the folder? `npm run make:shortcut` (add `-- -Desktop` or
-  `-- -StartMenu` to also put one there). `OpenFit.cmd` does the same without the icon.
-- Start silently at log-on: Task Scheduler → run `launcher\launch.ps1 -NoBrowser`.
-- Icon source: `scripts/make-icon.mjs` renders `launcher/openfit.ico` from the same
-  design as the iPhone icon (`npm run make:icon`).
+---
 
-## Configuration
+## ✨ What you get
 
-Most settings live in the app (**Settings**, gear icon on Today). The rest are in `.env`, which
-Setup creates from [`.env.example`](.env.example). A value set in the app wins over `.env`.
+| | |
+|---|---|
+| 🏋️ **Training** | Ready-made programs (full body, upper/lower, home) with photos and a form tip for every exercise, or build your own. Log sets in one tap: it remembers last time, suggests what to lift next, and runs a rest timer. |
+| 🍎 **Food** | Scan a barcode with your iPhone camera (Open Food Facts, millions of products), type it in, or re-log something you had recently. Calories, protein, carbs and fat against your goals. |
+| ⚖️ **Body weight** | One weigh-in a day, a 7-day trend line, your goal, and an honest verdict on your pace. |
+| 🤖 **AI coach** | A local model (Gemma by default) that reads your real numbers: a short note every morning, weekly reviews, and answers to any training or nutrition question. Safety checks built in. |
+| 🖥️ **Desktop dashboard** | A Windows and Mac app with big charts of your progress and a written progress report from the coach. |
+| 🔒 **Yours** | Everything in one SQLite file on your PC. Passcode lock, HTTPS, works away from home with Tailscale, one-click backup. |
+
+## 🚀 Get started
+
+You need a **Windows PC** (or a Mac, see below) that stays on while you use the app, and an **iPhone** on the same Wi-Fi.
+
+1. **Download** OpenFit: the green **Code → Download ZIP** button above, or the latest [release](https://github.com/Vitzso/open-fit/releases). Unzip it anywhere.
+2. **Double-click `Setup.cmd`.** It installs what's missing (Node.js, Ollama and the coach model, HTTPS certificates), asks you to choose a passcode, and adds an **OpenFit** shortcut to your Desktop. It skips anything already done, so it's also the repair button.
+3. **Double-click OpenFit.** It starts everything and shows the address to open on your iPhone. In Safari, tap **Share → Add to Home Screen** and it works like a normal app.
+
+Something not right? Double-click **`Validate.cmd`**: it checks every part of the install and fixes what's out of step. The full walkthrough, including Mac/Linux and using it away from home, is in **[SETUP.md](SETUP.md)**.
+
+## 🖥️ Desktop app
+
+<img src="docs/screenshots/desktop-dashboard.png" alt="The desktop dashboard: weight, calories, protein and training charts next to the coach's progress report" />
+
+The phone is for logging; the desktop app is for looking back. Charts for body weight, calories by macro, protein,
+weekly training volume and every main lift, from the last 7 days to the last year, plus a progress report written by
+your coach from the same numbers. It reads the same database as the phone, so there's nothing to sync.
+
+**Windows:** install `OpenFit-Setup-x.y.z.exe` from the [latest release](https://github.com/Vitzso/open-fit/releases) and pick your OpenFit folder once.
+**From source (Windows or Mac):** `npm run desktop:install` once, then `npm run desktop`. Details in [SETUP.md](SETUP.md#desktop-app-windows-and-mac-your-progress-on-a-big-screen).
+
+## 🔒 Private by design
+
+- **Nothing leaves your network.** The app, the database and the AI model all run on your PC. The only outside call is the barcode lookup (Open Food Facts), which sends the barcode and nothing else.
+- **The phone never talks to the AI directly.** OpenFit relays coach requests, so Ollama can stay private to your PC.
+- **Locked by a passcode** with brute-force protection, HTTPS with your own certificate authority, and protection against DNS-rebinding and cross-site requests.
+- **Your data is a file you own:** `prisma/openfit.db`, plus a full JSON export in Settings.
+
+## ⚙️ Configuration
+
+Most settings live in the app (**Settings**, the gear icon on Today). The rest are in `.env`, which Setup creates from
+[`.env.example`](.env.example). A value set in the app wins over `.env`.
 
 | What | Where | Default | Notes |
 |---|---|---|---|
-| AI model | Settings → AI coach connection, or `OLLAMA_MODEL` | `gemma4:latest` | Any chat model from [ollama.com/library](https://ollama.com/library). The field suggests installed models; download a new one from Settings → Setup. |
-| Thinking level | Settings → AI coach connection, or `OLLAMA_REASONING_EFFORT` | `none` | `low` is smarter for a few seconds' pause on a fast GPU. Only affects thinking models. |
+| AI model | Settings → AI coach connection, or `OLLAMA_MODEL` | `gemma4:latest` | Any chat model from [ollama.com/library](https://ollama.com/library). Settings → Setup can download one. |
+| Thinking level | Settings → AI coach connection, or `OLLAMA_REASONING_EFFORT` | `none` | `low` is smarter for a few seconds' pause on a fast GPU (thinking models only). |
 | Ollama address | Settings → AI coach connection, or `OLLAMA_BASE_URL` | `http://127.0.0.1:11434` | Change only if Ollama runs on another machine. |
 | Passcode | `APP_PASSCODE` (Setup asks for it) | none | Strongly recommended. Changing it signs every device out. |
-| Extra hostnames | `ALLOWED_HOSTS` | none | Only for names or forwarded addresses the PC can't see itself. Its own IPs, `localhost`, `*.local` and Tailscale names always work. |
-| Your PC's IP | nothing to set | detected | The launcher prints the phone address, Settings → Setup lists it, and the HTTPS certificate is refreshed automatically when it changes. |
-| Goals, units, body profile, fat-loss pace | Settings | 2,000 kcal, kg | The calorie target card can fill your goals in for you. |
-| Week starts on | `WEEK_START` in `src/lib/dates.ts` | Sunday (`0`) | `1` for Monday. |
+| Extra hostnames | `ALLOWED_HOSTS` | none | Only for names the PC can't see itself. Its own IPs, `localhost`, `*.local` and Tailscale names always work. |
+| Goals, units, week start, body profile, coach instructions | Settings | 2,000 kcal, kg, Sunday | The calorie target card can fill your goals in for you. |
 | Port | `PORT` environment variable | 3443 (HTTPS), 3000 (HTTP) | |
 
-## License
+## 🧰 For developers
 
-MIT, see [LICENSE](LICENSE). The exercise photos are public domain (see Credits).
-
-## Credits
-
-Exercise demonstration photos: [free-exercise-db](https://github.com/yuhonas/free-exercise-db) by yuhonas,
-released into the public domain (Unlicense). Stored in `public/exercises/`; the name mapping is in
-`src/lib/exercise-media.ts`.
-
-## Stack
-
-Next.js 15 (App Router) · React 19 · Tailwind CSS 4 · lucide-react · Prisma 6 + SQLite ·
-`@ducanh2912/next-pwa` (the maintained, App Router–compatible fork of `next-pwa`) ·
-`@zxing/browser` · zod
-
-## Folder layout
-
-Layered and modular: **UI components** render, **hooks** hold client state, **services** make
-browser-side API calls, **actions** validate and write, **lib** holds business logic and data access.
-One responsibility per file.
-
-```
-openfit/
-├─ prisma/                         # schema.prisma, migrations, seed.mjs
-├─ server.mjs                      # production HTTPS server (iOS camera needs HTTPS)
-├─ src/
-│  ├─ app/                         # routes only: pages, layouts, API route handlers
-│  │  ├─ page.tsx                  #   Today (composes components/today)
-│  │  ├─ workouts/ · weight/ · nutrition/ · coach/ · settings/ · login/ · offline/
-│  │  └─ api/                      #   coach (stream, note, health, checkup, selftest),
-│  │                               #   food/barcode/[code], login, export
-│  ├─ actions/                     # server actions, one file per domain (all writes)
-│  │  ├─ food.ts · weight.ts · workouts.ts · settings.ts
-│  │  └─ schemas.ts · settings-form.ts · revalidate.ts
-│  ├─ services/                    # browser → API calls; components never call fetch()
-│  │  ├─ http.ts · streams.ts · types.ts
-│  │  └─ auth · coach · coach-note · diagnostics · food · connectivity (.service.ts)
-│  ├─ components/
-│  │  ├─ workout/                  # WorkoutLogger + useWorkoutLogger, RestTimer, PlanChecklist, …
-│  │  ├─ scanner/                  # BarcodeScanner + useLiveScanner, CameraView, PhotoCapture, …
-│  │  ├─ food/                     # FoodEntryForm, PortionFields, ManualFoodFields, …
-│  │  ├─ coach/                    # CoachChat + useCoachChat, MessageList, CoachNote, …
-│  │  │  └─ diagnostics/           #   checkup + self-test screens and hooks
-│  │  ├─ today/ · settings/        # sections of those two screens
-│  │  └─ shared: PageHeader, BottomNav, MacroBar, WeightChart (pure SVG), ExerciseDemo, …
-│  └─ lib/
-│     ├─ ollama/                   # Ollama connector: config, errors, chat (SSE), health, lock
-│     │  └─ checkup/checks/        #   one file per checkup check
-│     ├─ coach/                    # system prompt, messages, safety flags
-│     │  ├─ sections/              #   one file per data-block section (training, nutrition, …)
-│     │  └─ selftest/              #   fixtures, rules, cases, runner
-│     ├─ energy.ts · energy-data.ts · progression.ts · workout-plan.ts · food-entry.ts
-│     ├─ openfoodfacts.ts · barcode-reader.ts · exercises.ts · today-data.ts
-│     └─ db · settings · auth · dates · units · format · storage · ui · programs · nutrition
-```
-
-## Scripts
+<details>
+<summary><b>Scripts</b></summary>
 
 | Script | What it does |
 |---|---|
 | `npm run dev` | Dev server on `0.0.0.0:3000` (HTTP) |
-| `npm run dev:https` | Dev server over HTTPS using `certs/` (mkcert) |
-| `npm run build` then `npm run start:https` | Production over HTTPS on port 3443 |
+| `npm run dev:https` | Dev server over HTTPS using `certs/` |
+| `npm run build` then `npm run start:https` | Production over HTTPS on port 3443 (what the launcher runs) |
+| `npm run validate` | Check the install and repair inconsistencies (`-- -CheckOnly` to only report) |
+| `npm run desktop:install` / `npm run desktop` | Install and run the desktop app from source |
+| `npm run make:certs` / `make:shortcut` / `make:icon` | HTTPS certificates, Desktop shortcut, app icons |
 | `npm run db:migrate` / `db:deploy` / `db:seed` / `db:studio` | Prisma helpers |
 | `npm run typecheck` | `tsc --noEmit` |
 
-## Design notes
+</details>
 
-- **The phone never talks to Ollama directly.** `/api/coach` proxies the request, so there are no
-  CORS or mixed-content problems, and the Ollama URL can stay `127.0.0.1`.
-- **Coach errors are reported before the stream starts.** The route reads the first token before it
-  sends a response, so "Ollama down" or "model missing" arrive as a JSON error with a fix-it hint
-  instead of a half-open stream.
+<details>
+<summary><b>Stack</b></summary>
+
+Next.js 15 (App Router) · React 19 · Tailwind CSS 4 · Prisma 6 + SQLite · `@ducanh2912/next-pwa` · `@zxing/browser` ·
+zod · lucide-react · Electron (desktop app) · Ollama (local AI). Charts are dependency-free SVG.
+
+</details>
+
+<details>
+<summary><b>Folder layout</b></summary>
+
+Layered and modular: **UI components** render, **hooks** hold client state, **services** make browser-side API calls,
+**actions** validate and write, **lib** holds business logic and data access. One responsibility per file.
+
+```
+openfit/
+├─ Setup.cmd · OpenFit.cmd · Validate.cmd   # one-click setup, start, and check-and-repair (Windows)
+├─ launcher/                       # PowerShell behind those: setup steps, launcher, certificates, validator
+├─ desktop/                        # Electron app: starts OpenFit's server on localhost, shows /desktop
+├─ prisma/                         # schema.prisma, migrations, seed.mjs
+├─ server.mjs                      # production HTTPS server (iOS camera needs HTTPS)
+└─ src/
+   ├─ app/                         # routes: Today, workouts, nutrition, weight, coach, settings, desktop, api/
+   ├─ actions/                     # server actions, one file per domain (all writes)
+   ├─ services/                    # browser → API calls; components never call fetch()
+   ├─ components/                  # workout/, scanner/, food/, coach/, today/, settings/, desktop/ (+ charts)
+   └─ lib/                         # ollama/ connector, coach/ prompt + data sections + self-tests,
+                                   # dashboard, energy, progression, openfoodfacts, dates, units, …
+```
+
+</details>
+
+<details>
+<summary><b>Design notes</b></summary>
+
+- **The phone never talks to Ollama directly.** `/api/coach` proxies the request, so there are no CORS or mixed-content problems.
+- **Coach errors are reported before the stream starts**, as a JSON error with a fix-it hint instead of a half-open stream.
 - **Weights are stored in kg** and converted for display, so switching between kg and lb is lossless.
 - **Days are stored as local `YYYY-MM-DD` strings**, which avoids timezone bugs in "today" queries.
 - **Coach averages exclude today**, because a half-logged day would make it look like you're under-eating.
+
+</details>
+
+## 📜 License and credits
+
+MIT, see [LICENSE](LICENSE). Exercise photos: [free-exercise-db](https://github.com/yuhonas/free-exercise-db) by yuhonas,
+public domain (Unlicense); stored in `public/exercises/`. Food data: [Open Food Facts](https://world.openfoodfacts.org) (ODbL).
+Screenshots show made-up demo data.
