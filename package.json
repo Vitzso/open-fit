@@ -18,7 +18,8 @@
     "postinstall": "prisma generate",
     "make:icon": "node scripts/make-icon.mjs",
     "make:shortcut": "pwsh -NoProfile -ExecutionPolicy Bypass -File launcher/create-shortcut.ps1",
-    "make:certs": "pwsh -NoProfile -ExecutionPolicy Bypass -File launcher/make-certs.ps1"
+    "make:certs": "pwsh -NoProfile -ExecutionPolicy Bypass -File launcher/make-certs.ps1",
+    "validate": "pwsh -NoProfile -ExecutionPolicy Bypass -File launcher/validate.ps1"
   },
   "overrides": {
     "postcss": "^8.5.30",

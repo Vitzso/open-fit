@@ -18,6 +18,42 @@ function Ask-YesNo($question, [bool]$default = $true) {
 # True if a command is on PATH.
 function Test-Command($name) { [bool](Get-Command $name -ErrorAction SilentlyContinue) }
 
+# Path of a program: on PATH, on PATH after reloading it (installed since this window opened),
+# or at one of the usual install locations. $null if it isn't installed.
+function Find-Program($name, [string[]]$knownPaths = @()) {
+    $cmd = Get-Command $name -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+    if (-not $cmd) {
+        Update-SessionPath
+        $cmd = Get-Command $name -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+    }
+    if ($cmd) { return $cmd.Source }
+    foreach ($p in $knownPaths) { if ($p -and (Test-Path $p)) { return $p } }
+    return $null
+}
+
+# Runs a native program and returns its exit code and output (stdout and stderr together).
+# EAP Continue: Windows PowerShell 5.1 turns every native stderr line into a terminating error
+# otherwise, and tools like openssl and prisma print routine progress there.
+function Invoke-Native([scriptblock]$NativeCommand) {
+    $prevEap = $ErrorActionPreference; $ErrorActionPreference = "Continue"
+    try {
+        $nativeOut = @(& $NativeCommand 2>&1 | ForEach-Object {
+            if ($_ -is [System.Management.Automation.ErrorRecord]) { $_.Exception.Message } else { "$_" }
+        })
+        $nativeCode = $LASTEXITCODE
+    } finally { $ErrorActionPreference = $prevEap }
+    return [pscustomobject]@{ ExitCode = $nativeCode; Output = $nativeOut }
+}
+
+# Version of an installed program as [version] (e.g. "v22.11.0" -> 22.11.0), or $null.
+function ConvertTo-Version($text) {
+    if ("$text" -match '(\d+)\.(\d+)(\.(\d+))?') {
+        $patch = if ($Matches[4]) { [int]$Matches[4] } else { 0 }
+        return [version]::new([int]$Matches[1], [int]$Matches[2], $patch)
+    }
+    return $null
+}
+
 # True if a URL answers within 2 seconds.
 function Test-Url($url) {
     try { Invoke-WebRequest $url -UseBasicParsing -TimeoutSec 2 | Out-Null; $true } catch { $false }
@@ -30,15 +66,29 @@ function Update-SessionPath {
     $env:Path = "$machine;$user"
 }
 
-# Installs a package with winget (Windows' built-in installer). Returns $true on success.
-function Install-Package($id, $label) {
+# True if winget lists the package as installed (e.g. installed but not on PATH in this window).
+function Test-PackageInstalled($id) {
+    if (-not (Test-Command winget)) { return $false }
+    $r = Invoke-Native { winget list --id $id --exact --accept-source-agreements --disable-interactivity }
+    return $r.ExitCode -eq 0 -and ($r.Output -match [regex]::Escape($id))
+}
+
+# Installs a package with winget (Windows' built-in installer), or upgrades it with -Upgrade.
+# Skips the download when winget says it's already installed. Returns $true on success.
+function Install-Package($id, $label, [switch]$Upgrade) {
     if (-not (Test-Command winget)) {
         Say "winget isn't available, so $label can't be installed automatically." Yellow
         return $false
     }
-    Say "Installing $label (Windows may ask for permission)..."
-    winget install --id $id --exact --silent --accept-source-agreements --accept-package-agreements --disable-interactivity | Out-Host
-    # winget returns non-zero for "already installed" too; the caller re-checks with Test-Command.
+    if (-not $Upgrade -and (Test-PackageInstalled $id)) {
+        Say "$label is already installed; skipping the download."
+        Update-SessionPath
+        return $true
+    }
+    $verb = if ($Upgrade) { "upgrade" } else { "install" }
+    Say "$(if ($Upgrade) { 'Updating' } else { 'Installing' }) $label (Windows may ask for permission)..."
+    winget $verb --id $id --exact --silent --accept-source-agreements --accept-package-agreements --disable-interactivity | Out-Host
+    # winget returns non-zero for "already installed" / "no upgrade" too; the caller re-checks.
     Update-SessionPath
     return $true
 }
