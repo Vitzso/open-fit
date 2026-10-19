@@ -19,6 +19,7 @@ New-Item -ItemType Directory -Force $certs | Out-Null
 
 . (Join-Path $PSScriptRoot "setup\common.ps1")
 . (Join-Path $PSScriptRoot "setup\git.ps1")
+. (Join-Path $PSScriptRoot "setup\remote.ps1")
 
 $openssl = Find-OpenSsl
 if (-not $openssl) { throw "OpenSSL not found. Install Git for Windows (it includes OpenSSL)." }
@@ -38,17 +39,17 @@ if (-not $Ip) {
 }
 if (-not $Ip) { throw "Couldn't detect a LAN IP address. Pass one with -Ip." }
 
-# Tailscale (remote access from anywhere): add this PC's tailnet IP and MagicDNS name.
+# Remote access from anywhere (Tailscale, WireGuard, ZeroTier, NetBird or REMOTE_ADDRESS):
+# add this PC's address and name on that network.
 $tsNames = @()
-$tsExe = "C:\Program Files\Tailscale\tailscale.exe"
-if (Test-Path $tsExe) {
-    try {
-        $ts = & $tsExe status --json 2>$null | ConvertFrom-Json
-        if ($ts.BackendState -eq "Running") {
-            $Ip += @($ts.Self.TailscaleIPs | Where-Object { $_ -match '^\d+\.\d+\.\d+\.\d+$' })
-            if ($ts.Self.DNSName) { $tsNames += $ts.Self.DNSName.TrimEnd(".") }
-        } else { Write-Host "Tailscale isn't connected; certificate will cover the LAN only." -ForegroundColor Yellow }
-    } catch { }
+$remoteCfg = Get-RemoteConfig $Root
+if ($remoteCfg.Provider -ne "none") {
+    $remote = Get-RemoteAddresses $Root
+    $Ip += @($remote.Ips)
+    $tsNames += @($remote.Names)
+    if ($remote.Ips.Count -eq 0 -and $remote.Names.Count -eq 0) {
+        Write-Host "$($remoteCfg.Label) isn't connected; certificate will cover the LAN only." -ForegroundColor Yellow
+    }
 }
 # Extra addresses from ALLOWED_HOSTS in .env (names or IPs), e.g. a port-forward or your own DNS name.
 foreach ($h in ((Get-EnvValue (Join-Path $Root ".env") "ALLOWED_HOSTS") -split ',')) {

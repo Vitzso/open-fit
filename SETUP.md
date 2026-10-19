@@ -10,7 +10,8 @@ skips whatever is already done, so it's also the "repair" button:
 3. Your settings file (`.env`), asking you to choose a passcode (typed hidden)
 4. App packages, database and build
 5. Ollama and the coach model (`gemma4:latest`, several GB the first time)
-6. Tailscale, if you say yes (for using OpenFit away from home)
+6. Remote access, if you want it (for using OpenFit away from home): Tailscale, WireGuard,
+   ZeroTier, NetBird or your own VPN, see [Away from home](#away-from-home-tailscale-wireguard-zerotier-netbird-or-your-own)
 7. HTTPS certificates
 8. The OpenFit shortcut on your Desktop
 
@@ -29,7 +30,7 @@ How it fits together:
 
 ```
 iPhone Safari / Home Screen app
-        │  https://<pc-ip>:3443   (home Wi-Fi, or anywhere via Tailscale)
+        │  https://<pc-ip>:3443   (home Wi-Fi, or anywhere via Tailscale, WireGuard, ZeroTier, NetBird…)
         ▼
 Next.js server on your PC ──► SQLite file  prisma/openfit.db
         │            └──────► Open Food Facts API (internet, product lookups only)
@@ -83,7 +84,7 @@ cookies separate from Safari, so you sign in once in each.
 If you reach the PC by a hostname instead of its IP (for example `my-pc.lan`), or by an
 address the PC can't see itself (a port forward, a reverse proxy), add it to `ALLOWED_HOSTS`
 in `.env` (comma-separated). Unknown hostnames are rejected to stop DNS-rebinding attacks;
-IP addresses, `localhost`, `*.local` and Tailscale names always work. Entries are also added
+IP addresses, `localhost`, `*.local`, Tailscale and NetBird names and `REMOTE_ADDRESS` always work. Entries are also added
 to the HTTPS certificate the next time it's made.
 
 To change the schema later, edit `prisma/schema.prisma` and run `npm run db:migrate`.
@@ -303,19 +304,45 @@ Gatekeeper ask you to confirm the first time you open it.
 The coach report needs Ollama running, like the Coach tab. Reports are saved, so the
 latest one shows as soon as the dashboard opens.
 
-## Away from home (Tailscale)
+## Away from home (Tailscale, WireGuard, ZeroTier, NetBird or your own)
 
-OpenFit is reachable outside your home network through [Tailscale](https://tailscale.com):
-a private, encrypted network between your own devices. No router ports are opened, and
-nobody outside your Tailscale account can reach the app.
+OpenFit is reachable outside your home network through a **private network** that your PC and
+iPhone both join: an encrypted tunnel between your own devices. No router ports are opened, and
+nobody outside that network can reach the app. Pick the one you like:
 
-1. PC: Tailscale installed and signed in (tray icon → Connected).
-2. iPhone: install **Tailscale** from the App Store, sign in with the **same account**, turn it on.
-3. Run `npm run make:certs` once more. It adds the PC's Tailscale name to the certificate,
-   keeping the same authority, so there's nothing to reinstall on the phone.
-4. On the iPhone, open the **Anywhere** address the launcher prints (it looks like
-   `https://<pc-name>.<your-tailnet>.ts.net:3443`), and **Add to Home Screen from that address**.
-   It works at home and away (with Tailscale on), so you only need this one icon.
+| Option | What it is | Phone app |
+|---|---|---|
+| **Tailscale** (default) | Easiest; free for personal use. Works with [Headscale](https://github.com/juanfont/headscale), the open-source server, too | Tailscale |
+| **WireGuard** | Open source. You set up the tunnel (on your router, a server or another PC) and import it on both devices | WireGuard |
+| **ZeroTier** | Open source. Both devices join the same network ID; works with your own controller | ZeroTier One |
+| **NetBird** | Open source, WireGuard-based; free cloud or self-hosted | NetBird |
+| **Other** | Anything else: OpenVPN, Nebula, a VPN on your router, a port forward. You enter the address | yours |
+| **None** | Home Wi-Fi only | |
+
+**Choose it** when Setup asks (step 6), or in the app under **Settings → Remote access**, or in
+`.env` with `REMOTE_ACCESS` (`tailscale`, `wireguard`, `zerotier`, `netbird`, `custom` or `none`).
+Then:
+
+1. **PC:** run Setup. It installs the app you picked (except for Other), and tells you when
+   it's connected. Sign in or activate your tunnel from its tray icon if asked.
+2. **iPhone:** install the same app from the App Store and join the same network
+   (same account, the matching WireGuard peer, or the same ZeroTier network ID).
+3. **Restart OpenFit.** The launcher adds the PC's address on that network to the HTTPS
+   certificate (keeping the same authority, so nothing to reinstall on the phone) and prints it
+   as the **Anywhere** address, for example `https://<pc-name>.<your-tailnet>.ts.net:3443`
+   or `https://10.8.0.2:3443`.
+4. On the iPhone, open that **Anywhere** address and **Add to Home Screen from it**. It works at
+   home and away (with the VPN app on), so you only need this one icon.
+
+Fine-tuning, all optional (in Settings → Remote access → Advanced, or `.env`):
+
+- `REMOTE_ADDRESS`: the address your phone uses when away, if the detected one isn't right
+  (required for Other). It's added to the certificate and to the allowed host names.
+- `REMOTE_INTERFACE`: the PC's network adapter to read its address from, when it has several
+  tunnels (for example `wg0`, or the name of your OpenVPN adapter).
+- `REMOTE_LOGIN_SERVER`: your own Headscale server (Tailscale) or NetBird management URL. Setup
+  then shows the command to sign in against it (`tailscale up --login-server …` /
+  `netbird up --management-url …`).
 
 The PC still has to be on with the launcher running. A Home Screen icon added from the
 `192.168.x.x` address only works on home Wi-Fi. Each address also has its own sign-in

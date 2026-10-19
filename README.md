@@ -36,7 +36,7 @@ No subscription, no account, no cloud. Your data never leaves your home.
 | ⚖️ **Body weight** | One weigh-in a day, a 7-day trend line, your goal, and an honest verdict on your pace. |
 | 🤖 **AI coach** | A local model (Gemma by default) that reads your real numbers: a short note every morning, weekly reviews, and answers to any training or nutrition question. Safety checks built in. |
 | 🖥️ **Desktop dashboard** | A Windows and Mac app with big charts of your progress and a written progress report from the coach. |
-| 🔒 **Yours** | Everything in one SQLite file on your PC. Passcode lock, HTTPS, works away from home with Tailscale, one-click backup. |
+| 🔒 **Yours** | Everything in one SQLite file on your PC. Passcode lock, HTTPS, works away from home over your choice of private network (Tailscale, WireGuard, ZeroTier, NetBird or your own VPN), one-click backup. |
 
 ## 🚀 Get started
 
@@ -77,8 +77,9 @@ Most settings live in the app (**Settings**, the gear icon on Today). The rest a
 | Thinking level | Settings → AI coach connection, or `OLLAMA_REASONING_EFFORT` | `none` | `low` is smarter for a few seconds' pause on a fast GPU (thinking models only). |
 | Ollama address | Settings → AI coach connection, or `OLLAMA_BASE_URL` | `http://127.0.0.1:11434` | Change only if Ollama runs on another machine. |
 | Passcode | `APP_PASSCODE` (Setup asks for it) | none | Strongly recommended. Changing it signs every device out. |
-| Extra hostnames | `ALLOWED_HOSTS` | none | Only for names the PC can't see itself. Its own IPs, `localhost`, `*.local` and Tailscale names always work. |
+| Extra hostnames | `ALLOWED_HOSTS` | none | Only for names the PC can't see itself. Its own IPs, `localhost`, `*.local`, Tailscale and NetBird names always work. |
 | Goals, units, week start, body profile, coach instructions | Settings | 2,000 kcal, kg, Sunday | The calorie target card can fill your goals in for you. |
+| Remote access | Settings → Remote access, or `REMOTE_ACCESS` | Tailscale | `tailscale`, `wireguard`, `zerotier`, `netbird`, `custom` (your own VPN; set `REMOTE_ADDRESS`) or `none`. See [Away from home](SETUP.md#away-from-home-tailscale-wireguard-zerotier-netbird-or-your-own). |
 | Port | `PORT` environment variable | 3443 (HTTPS), 3000 (HTTP) | |
 
 ## 🧰 For developers

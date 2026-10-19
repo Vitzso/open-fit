@@ -31,7 +31,7 @@ export default function LoginForm({ next, initialError }: { next: string; initia
     }
     setError(
       r.status === 0
-        ? "Can't reach your PC. Check that OpenFit is running (and Tailscale is on when away)."
+        ? "Can't reach your PC. Check that OpenFit is running (and, away from home, that your VPN app is on)."
         : (ERRORS[r.error] ?? "Couldn't sign in. Try again."),
     );
     setBusy(false);

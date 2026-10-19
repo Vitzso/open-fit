@@ -43,7 +43,7 @@ $RequiredFiles = @(
     "OpenFit.cmd", "Setup.cmd", "launcher\launch.ps1", "launcher\setup.ps1", "launcher\make-certs.ps1",
     "launcher\create-shortcut.ps1", "launcher\openfit.ico",
     "launcher\setup\common.ps1", "launcher\setup\node.ps1", "launcher\setup\git.ps1", "launcher\setup\env.ps1",
-    "launcher\setup\app.ps1", "launcher\setup\ollama.ps1", "launcher\setup\tailscale.ps1",
+    "launcher\setup\app.ps1", "launcher\setup\ollama.ps1", "launcher\setup\remote.ps1",
     "launcher\setup\certs.ps1", "launcher\setup\shortcut.ps1"
 )
 $missingFiles = @($RequiredFiles | Where-Object { -not (Test-Path (Join-Path $Root $_)) })
@@ -63,7 +63,7 @@ if ($missingFiles.Count -eq 0) {
     if ($stillMissing.Count -eq 0) { Report FIXED "Project files" "restored $($missingFiles -join ', ')" }
     else { Report FAILED "Project files" "can't restore $($stillMissing -join ', '); download OpenFit again" }
 }
-$helpers = "common", "node", "git", "env", "app", "certs", "ollama"
+$helpers = "common", "node", "git", "env", "app", "remote", "certs", "ollama"
 if (@($helpers | Where-Object { -not (Test-Path (Join-Path $PSScriptRoot "setup\$_.ps1")) }).Count -gt 0) {
     Write-Host ""
     Write-Host "  The setup scripts themselves are missing, so nothing else can be checked." -ForegroundColor Red
@@ -242,6 +242,16 @@ if (-not (Find-OpenSsl)) {
         if ($ok -and $newCa) { Say "On the iPhone, open /ca.crt again and trust the new certificate." Yellow }
         $ok
     }
+}
+
+# Remote access (optional): the chosen private network is installed and connected.
+Invoke-Check "Remote access" -Advisory -Test {
+    $rc = Get-RemoteConfig $Root
+    if ($rc.Provider -eq "none") { return }
+    if ($rc.Provider -eq "custom" -and -not $rc.Address) { return "Other is chosen but REMOTE_ADDRESS is empty (set it in Settings -> Remote access)" }
+    $rs = Get-RemoteStatus $rc
+    if (-not $rs.Installed) { return "$($rc.Label) isn't installed on this PC (run Setup)" }
+    if (-not $rs.Connected) { return "$($rc.Label) isn't connected, so OpenFit only works on home Wi-Fi right now" }
 }
 
 # 6. Shortcuts: they hold absolute paths, so they break when the folder moves.

@@ -8,7 +8,7 @@ Set-Location $Root
 $Host.UI.RawUI.WindowTitle = "OpenFit server"
 
 # Shared helpers (Say, Test-Url, Test-NodeReady, Test-InstallNeeded, Test-BuildNeeded, Initialize-Certs...).
-foreach ($part in "common", "node", "app", "git", "certs", "ollama") {
+foreach ($part in "common", "node", "app", "git", "remote", "certs", "ollama") {
     . (Join-Path $PSScriptRoot "setup\$part.ps1")
 }
 
@@ -123,15 +123,14 @@ $opener = if (-not $NoBrowser) { Start-Job -ArgumentList $localUrl, $port -Scrip
 Write-Host ""
 Say "On this PC:  $localUrl" Green
 foreach ($ip in $lanIps) { Say "On iPhone:   ${scheme}://${ip}:$port  (home Wi-Fi)" Green }
-# Tailscale: works from anywhere, as long as Tailscale is on on the phone.
-$tsExe = "C:\Program Files\Tailscale\tailscale.exe"
-if (Test-Path $tsExe) {
-    try {
-        $ts = & $tsExe status --json 2>$null | ConvertFrom-Json
-        if ($ts.BackendState -eq "Running" -and $ts.Self.DNSName) {
-            Say "Anywhere:    ${scheme}://$($ts.Self.DNSName.TrimEnd('.')):$port  (Tailscale)" Green
-        }
-    } catch { }
+# Remote access (Tailscale, WireGuard, ZeroTier, NetBird or your own): works from anywhere while
+# the phone is on that network. A name reads better than an IP, so it's shown first.
+$remoteCfg = Get-RemoteConfig $Root
+if ($remoteCfg.Provider -ne "none") {
+    $remote = Get-RemoteAddresses $Root
+    $away = @($remote.Names) + @($remote.Ips) | Select-Object -First 1
+    if ($away) { Say "Anywhere:    ${scheme}://${away}:$port  ($($remoteCfg.Label))" Green }
+    elseif ($remoteCfg.Explicit) { Say "($($remoteCfg.Label) isn't connected, so OpenFit works on home Wi-Fi only right now.)" DarkGray }
 }
 if (-not $https) { Say "(Live barcode scanning on iPhone needs HTTPS: see SETUP.md step 6.)" DarkGray }
 Write-Host ""

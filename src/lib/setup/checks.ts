@@ -1,25 +1,22 @@
 // Server-side setup checklist: is each part of OpenFit ready on this PC?
 import "server-only";
-import { execFile } from "node:child_process";
-import { existsSync } from "node:fs";
 import { passcodeEnabled } from "@/lib/auth";
 import { checkOllamaHealth } from "@/lib/ollama";
 import { coachOptions } from "@/lib/coach/config";
 import { getSettings } from "@/lib/settings";
 import { phoneAddresses, type PhoneAddress } from "./addresses";
+import { getRemoteStatus, type RemoteStatus } from "./remote-status";
 
 export interface SetupItem {
-  id: "passcode" | "https" | "ollama" | "model" | "tailscale";
+  id: "passcode" | "https" | "ollama" | "model" | "remote";
   label: string;
   ok: boolean;
-  /** Optional parts (Tailscale) don't count as problems when missing. */
+  /** Optional parts (remote access) don't count as problems when missing. */
   optional?: boolean;
   detail: string;
   /** What to do about it, when not ok. */
   fix?: string;
 }
-
-const TAILSCALE_EXE = "C:\\Program Files\\Tailscale\\tailscale.exe";
 
 /** Whether a device passcode protects the app. */
 function passcodeItem(): SetupItem {
@@ -67,46 +64,42 @@ async function ollamaItems(): Promise<SetupItem[]> {
   ];
 }
 
-/** Reads `tailscale status --json`; resolves to null if it can't be read. */
-function tailscaleState(): Promise<{ BackendState?: string; Self?: { DNSName?: string } } | null> {
-  return new Promise((resolve) => {
-    execFile(TAILSCALE_EXE, ["status", "--json"], { timeout: 4000, windowsHide: true }, (_err, stdout) => {
-      try {
-        resolve(JSON.parse(stdout));
-      } catch {
-        resolve(null);
-      }
-    });
-  });
-}
-
-type TailscaleState = Awaited<ReturnType<typeof tailscaleState>>;
-
-/** Optional remote access through Tailscale. */
-function tailscaleItem(st: TailscaleState): SetupItem {
-  if (!existsSync(TAILSCALE_EXE)) {
-    return { id: "tailscale", label: "Away-from-home access (Tailscale)", ok: false, optional: true, detail: "Not installed. OpenFit works on your home Wi-Fi.", fix: "Optional: run Setup on the PC and say yes to Tailscale." };
+/** Optional away-from-home access through the remote access chosen in Settings (or .env). */
+function remoteItem(st: RemoteStatus): SetupItem {
+  const label = `Away-from-home access (${st.label})`;
+  if (st.config.provider === "none") {
+    return {
+      id: "remote",
+      label: "Away-from-home access",
+      ok: false,
+      optional: true,
+      detail: "Off. OpenFit works on your home Wi-Fi.",
+      fix: "Optional: pick Tailscale, WireGuard, ZeroTier, NetBird or your own under Remote access.",
+    };
   }
-  const ok = st?.BackendState === "Running";
+  if (!st.installed) {
+    return { id: "remote", label, ok: false, optional: true, detail: "Not installed on the PC.", fix: `Run Setup on the PC; it installs ${st.label}.` };
+  }
+  if (st.config.provider === "custom" && !st.config.address) {
+    return { id: "remote", label, ok: false, optional: true, detail: "No address set.", fix: "Enter the address your phone uses when away, under Remote access." };
+  }
   return {
-    id: "tailscale",
-    label: "Away-from-home access (Tailscale)",
-    ok,
+    id: "remote",
+    label,
+    ok: st.connected,
     optional: true,
-    detail: ok ? `Connected as ${st?.Self?.DNSName?.replace(/\.$/, "") ?? "this PC"}.` : "Installed but not connected.",
-    fix: ok ? undefined : "Open Tailscale from the Start menu on the PC and sign in.",
+    detail: st.connected ? `Reachable at ${st.hosts[0] ?? "this PC"}.` : "Installed but not connected.",
+    fix: st.connected ? undefined : `Open ${st.label} on the PC and connect, and turn it on on your iPhone.`,
   };
 }
-
-/** Tailscale's name for this PC when connected (e.g. "my-pc.tailnet.ts.net"), else undefined. */
-const tailscaleName = (st: TailscaleState) => (st?.BackendState === "Running" ? st.Self?.DNSName?.replace(/\.$/, "") : undefined);
 
 /** The full checklist plus the addresses to open on a phone, worked out from the request that asked. */
 export async function getSetupStatus(requestUrl: string): Promise<{ items: SetupItem[]; addresses: PhoneAddress[] }> {
   const isHttps = new URL(requestUrl).protocol === "https:";
-  const [ollama, ts] = await Promise.all([ollamaItems(), existsSync(TAILSCALE_EXE) ? tailscaleState() : Promise.resolve(null)]);
+  const [ollama, remote] = await Promise.all([ollamaItems(), getRemoteStatus()]);
+  const away = remote.connected && remote.hosts[0] ? { label: remote.label, host: remote.hosts[0] } : undefined;
   return {
-    items: [passcodeItem(), httpsItem(isHttps), ...ollama, tailscaleItem(ts)],
-    addresses: await phoneAddresses(requestUrl, tailscaleName(ts)),
+    items: [passcodeItem(), httpsItem(isHttps), ...ollama, remoteItem(remote)],
+    addresses: await phoneAddresses(requestUrl, away),
   };
 }

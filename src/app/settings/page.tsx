@@ -5,6 +5,7 @@ import CalorieTargetCard from "@/components/settings/CalorieTargetCard";
 import CoachConnectionSection from "@/components/settings/CoachConnectionSection";
 import CoachInstructionsSection from "@/components/settings/CoachInstructionsSection";
 import DailyGoalsSection from "@/components/settings/DailyGoalsSection";
+import RemoteAccessSection from "@/components/settings/RemoteAccessSection";
 import SecuritySection from "@/components/settings/SecuritySection";
 import SetupChecklist from "@/components/settings/SetupChecklist";
 import StatusBanner from "@/components/settings/StatusBanner";
@@ -12,13 +13,14 @@ import UnitsSection from "@/components/settings/UnitsSection";
 import { passcodeEnabled } from "@/lib/auth";
 import { getEnergyEstimate } from "@/lib/energy-data";
 import { getSettings } from "@/lib/settings";
+import { getRemoteStatus } from "@/lib/setup/remote-status";
 import { btnPrimary } from "@/lib/ui";
 
 export const dynamic = "force-dynamic";
 
 /** Settings: calorie target, body profile, units, goals, AI coach connection and instructions, security and backup. */
 export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ saved?: string; error?: string }> }) {
-  const [s, q] = await Promise.all([getSettings(), searchParams]);
+  const [s, q, remote] = await Promise.all([getSettings(), searchParams, getRemoteStatus()]);
   const energy = await getEnergyEstimate(s);
   const ollamaDefaults = {
     baseUrl: process.env.OLLAMA_BASE_URL || "http://127.0.0.1:11434",
@@ -43,6 +45,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         <button className={`${btnPrimary} w-full`}>Save settings</button>
       </form>
       <SetupChecklist />
+      <RemoteAccessSection config={remote.config} status={{ connected: remote.connected, installed: remote.installed, hosts: remote.hosts }} />
       <SecuritySection locked={passcodeEnabled()} />
     </>
   );

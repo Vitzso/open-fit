@@ -5,13 +5,13 @@ import { execFile } from "node:child_process";
 import { networkInterfaces } from "node:os";
 
 export interface PhoneAddress {
-  /** e.g. "Home network" or "Anywhere (Tailscale)". */
+  /** e.g. "Home network" or "Anywhere (WireGuard)". */
   label: string;
   url: string;
 }
 
 /** Virtual adapters (WSL, Hyper-V, VirtualBox, VPN bridges) that a phone can't reach. */
-const VIRTUAL = /vEthernet|VirtualBox|VMware|WSL|Hyper-V|Loopback|Docker|Tailscale/i;
+const VIRTUAL = /vEthernet|VirtualBox|VMware|WSL|Hyper-V|Loopback|Docker|Tailscale|WireGuard|ZeroTier|NetBird|^wt\d|^wg\d|^zt|^utun/i;
 const CACHE_MS = 60_000;
 let cache: { ips: string[]; at: number } | null = null;
 
@@ -46,10 +46,10 @@ async function lanAddresses(): Promise<string[]> {
 }
 
 /** Every address to open OpenFit at, using the protocol and port of the current request. */
-export async function phoneAddresses(requestUrl: string, tailscaleName?: string): Promise<PhoneAddress[]> {
+export async function phoneAddresses(requestUrl: string, away?: { label: string; host: string }): Promise<PhoneAddress[]> {
   const { protocol, port } = new URL(requestUrl);
   const suffix = port ? `:${port}` : "";
   const out = (await lanAddresses()).map((ip) => ({ label: "Home network", url: `${protocol}//${ip}${suffix}` }));
-  if (tailscaleName) out.push({ label: "Anywhere (Tailscale)", url: `${protocol}//${tailscaleName}${suffix}` });
+  if (away) out.push({ label: `Anywhere (${away.label})`, url: `${protocol}//${away.host}${suffix}` });
   return out;
 }
