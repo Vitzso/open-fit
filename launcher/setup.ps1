@@ -7,7 +7,7 @@ $Root = Split-Path -Parent $PSScriptRoot
 Set-Location $Root
 $Host.UI.RawUI.WindowTitle = "OpenFit setup"
 
-foreach ($part in "common", "node", "git", "env", "app", "ollama", "tailscale", "certs", "shortcut") {
+foreach ($part in "common", "node", "git", "env", "app", "ollama", "remote", "certs", "shortcut") {
     . (Join-Path $PSScriptRoot "setup\$part.ps1")
 }
 
@@ -42,8 +42,8 @@ if (-not $results["App"]) {
 Step 5 $total "AI coach (Ollama + $model)"
 $results["AI coach"] = Install-Ollama $model
 
-Step 6 $total "Remote access (Tailscale, optional)"
-$results["Tailscale"] = Install-Tailscale
+Step 6 $total "Remote access (optional: Tailscale, WireGuard, ZeroTier, NetBird...)"
+$results["Remote access"] = Install-RemoteAccess $Root
 
 Step 7 $total "HTTPS certificates"
 $results["HTTPS"] = Initialize-Certs $Root

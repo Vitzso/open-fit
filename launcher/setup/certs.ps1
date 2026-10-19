@@ -3,26 +3,22 @@
 # when the files don't belong together; the phone keeps trusting it, because the certificate
 # authority stays the same. Get-CertProblem is shared with launch.ps1 and validate.ps1.
 
-$TailscaleCli = "C:\Program Files\Tailscale\tailscale.exe"
+# Needs remote.ps1 (Get-RemoteAddresses) dot-sourced as well.
 # Re-issue the server certificate this long before it expires (it's valid for 800 days).
 $CertRenewDays = 30
 
-# This PC's current addresses: LAN IPv4 (adapters with a gateway) plus the Tailscale IPv4 when connected.
-function Get-PcAddresses {
+# This PC's current addresses: LAN IPv4 (adapters with a gateway) plus its addresses on the
+# remote-access network (Tailscale, WireGuard, ZeroTier, NetBird or REMOTE_ADDRESS).
+function Get-PcAddresses($root) {
     $ips = @(Get-NetIPConfiguration -ErrorAction SilentlyContinue |
         Where-Object { $_.IPv4DefaultGateway -and $_.NetAdapter.Status -eq "Up" } |
         ForEach-Object { $_.IPv4Address.IPAddress } |
         Where-Object { $_ -notmatch '^(127\.|169\.254\.)' })
-    if (Test-Path $TailscaleCli) {
-        try {
-            $ts = & $TailscaleCli status --json 2>$null | ConvertFrom-Json
-            if ($ts.BackendState -eq "Running") { $ips += @($ts.Self.TailscaleIPs | Where-Object { $_ -match '^\d+\.\d+\.\d+\.\d+$' }) }
-        } catch { }
-    }
+    $ips += @((Get-RemoteAddresses $root).Ips)
     return @($ips | Where-Object { $_ } | Select-Object -Unique)
 }
 
-# Addresses the current certificate doesn't cover yet (empty when it's up to date or can't be read).
+# Addresses and names the current certificate doesn't cover yet (empty when it's up to date or can't be read).
 function Get-UncoveredAddresses($root) {
     $cert = Join-Path $root "certs\cert.pem"
     $openssl = Find-OpenSsl
@@ -30,7 +26,9 @@ function Get-UncoveredAddresses($root) {
     $r = Invoke-OpenSsl $openssl @("x509", "-in", $cert, "-noout", "-ext", "subjectAltName")
     $san = $r.Output -join " "
     if ($r.ExitCode -ne 0 -or -not $san) { return @() }
-    return @(Get-PcAddresses | Where-Object { $san -notmatch "IP Address:$([regex]::Escape($_))(\s|,|$)" })
+    $ips = @(Get-PcAddresses $root | Where-Object { $san -notmatch "IP Address:$([regex]::Escape($_))(\s|,|$)" })
+    $names = @((Get-RemoteAddresses $root).Names | Where-Object { $san -notmatch "DNS:$([regex]::Escape($_))(\s|,|$)" })
+    return @($ips + $names)
 }
 
 # Why the HTTPS files need re-issuing, or $null when they're fine (or there's no OpenSSL to check with).

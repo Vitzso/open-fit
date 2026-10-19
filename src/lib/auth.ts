@@ -46,8 +46,8 @@ export async function checkPasscode(attempt: string): Promise<boolean> {
 export function isAllowedHost(hostHeader: string | null): boolean {
   if (!hostHeader) return false;
   const host = hostHeader.replace(/:\d+$/, "").toLowerCase();
-  const extra = (process.env.ALLOWED_HOSTS ?? "")
-    .split(",")
+  // ALLOWED_HOSTS, plus the away-from-home address chosen under Remote access.
+  const extra = [...(process.env.ALLOWED_HOSTS ?? "").split(","), process.env.REMOTE_ADDRESS ?? ""]
     .map((h) => h.trim().toLowerCase())
     .filter(Boolean);
   return (
@@ -56,9 +56,10 @@ export function isAllowedHost(hostHeader: string | null): boolean {
     host === "localhost" ||
     host.endsWith(".localhost") ||
     host.endsWith(".local") ||
-    // Tailscale MagicDNS names only resolve inside your own tailnet, so an
-    // outside website can't point one at this PC.
+    // Tailscale MagicDNS and NetBird peer names only resolve inside your own private
+    // network, so an outside website can't point one at this PC.
     host.endsWith(".ts.net") ||
+    host.endsWith(".netbird.cloud") ||
     extra.includes(host)
   );
 }

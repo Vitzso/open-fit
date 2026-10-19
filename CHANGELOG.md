@@ -2,6 +2,17 @@
 
 All notable changes to OpenFit. Versions follow [Semantic Versioning](https://semver.org).
 
+## [Unreleased]
+
+### Added
+
+- **Choose your remote access.** Use OpenFit away from home over Tailscale (or Headscale), WireGuard,
+  ZeroTier, NetBird, or any other VPN (OpenVPN, Nebula, a router VPN...) by entering its address.
+  Pick it when Setup asks, in Settings → Remote access, or with `REMOTE_ACCESS` in `.env`. Setup
+  installs the chosen app, the HTTPS certificate covers its address, the launcher and Settings show
+  the "Anywhere" address, and the address is accepted by the host check. Existing installs keep
+  using Tailscale.
+
 ## [0.1.1] - 2026-10-19
 
 ### Added

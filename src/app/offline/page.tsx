@@ -11,7 +11,7 @@ export default function Offline() {
       <h1 className="text-lg font-semibold text-fg">Can&apos;t reach your PC</h1>
       <ul className="max-w-xs space-y-1 text-left text-sm">
         <li>• Is the PC on, with the OpenFit launcher window open?</li>
-        <li>• Away from home: is the Tailscale app switched on?</li>
+        <li>• Away from home: is your VPN app (Tailscale, WireGuard, ZeroTier, NetBird…) switched on?</li>
         <li>• Just switched between Wi-Fi and mobile data? Give it a few seconds.</li>
       </ul>
       <Reconnect />
