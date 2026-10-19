@@ -107,6 +107,7 @@ jobs:
         if: github.ref_type == 'tag'
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
           TAG: ${{ github.ref_name }}
           # desktop/dist/signed once signing is on.
           INSTALLER_DIR: desktop/dist
