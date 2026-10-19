@@ -21,6 +21,7 @@ async function requestBody(cfg: OllamaConfig, messages: ChatMessage[], opts: Cha
     messages,
     stream: true,
     temperature: opts.temperature ?? 0.5, // natural but still consistent; checkups pass their own
+    max_tokens: opts.maxTokens ?? 4096,
     ...(thinks ? { reasoning_effort: effort } : {}),
     ...(opts.jsonSchema ? { response_format: { type: "json_schema", json_schema: opts.jsonSchema } } : {}),
   });

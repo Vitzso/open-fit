@@ -45,6 +45,10 @@ No subscription, no account, no cloud. Your data never leaves your home.
 
 You need a **Windows PC** (or a Mac, see below) that stays on while you use the app, and an **iPhone** on the same Wi-Fi.
 
+**Easiest on Windows:** download **`OpenFit-Setup-x.y.z.exe`** from the [latest release](https://github.com/Vitzso/open-fit/releases) and open it. It installs OpenFit, runs Setup for you in its own window, then opens your dashboard. Installing a newer one later updates OpenFit and keeps your data. Start the phone app with the **OpenFit server** shortcut it adds.
+
+**Or by hand:**
+
 1. **Download** OpenFit: the green **Code → Download ZIP** button above, or the latest [release](https://github.com/Vitzso/open-fit/releases). Unzip it anywhere.
 2. **Double-click `Setup.cmd`.** It installs what's missing (Node.js, Ollama and the coach model, HTTPS certificates), asks you to choose a passcode, and adds an **OpenFit** shortcut to your Desktop. It skips anything already done, so it's also the repair button.
 3. **Double-click OpenFit.** It starts everything and shows the address to open on your iPhone. In Safari, tap **Share → Add to Home Screen** and it works like a normal app.
@@ -59,7 +63,7 @@ The phone is for logging; the desktop app is for looking back. Charts for body w
 weekly training volume and every main lift, from the last 7 days to the last year, plus a progress report written by
 your coach from the same numbers. It reads the same database as the phone, so there's nothing to sync.
 
-**Windows:** install `OpenFit-Setup-x.y.z.exe` from the [latest release](https://github.com/Vitzso/open-fit/releases) and pick your OpenFit folder once.
+**Windows:** install `OpenFit-Setup-x.y.z.exe` from the [latest release](https://github.com/Vitzso/open-fit/releases). It includes OpenFit itself: on a PC without it, it installs it and runs Setup; if you already have OpenFit, choose **I already have OpenFit** and pick its folder.
 **From source (Windows or Mac):** `npm run desktop:install` once, then `npm run desktop`. Details in [SETUP.md](SETUP.md#desktop-app-windows-and-mac-your-progress-on-a-big-screen).
 
 ## 🔒 Private by design

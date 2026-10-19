@@ -2,6 +2,34 @@
 
 All notable changes to OpenFit. Versions follow [Semantic Versioning](https://semver.org).
 
+## [0.1.4] - 2026-10-19
+
+### Added
+
+- **The Windows installer includes OpenFit itself.** On a PC without OpenFit, `OpenFit-Setup.exe` installs it
+  (in your user folder, or a folder you choose), runs Setup in its own window and opens the dashboard when
+  it's done. If packages or the build go missing later, it offers to run Setup again.
+- **Updates from the installer.** Installing a newer `OpenFit-Setup.exe` offers to update your OpenFit folder
+  (not a git checkout) and keeps your settings, passcode and data. Files the new version no longer has are
+  removed, and it asks you to close the OpenFit server window first so nothing is locked.
+
+### Fixed
+
+- **"The coach is busy" when it wasn't doing anything you asked for.** OpenFit runs one AI job at a time,
+  and a second request (the home page's coach note, a question from the phone, the checkup or self-test,
+  a food photo) used to fail straight away. Now it waits its turn, for up to 2 minutes, and if it still
+  can't run, the message says what the coach is busy with. Replies are capped at 4096 tokens, so a model
+  stuck repeating itself can't hold everything up. The coach note and progress report stop when you leave
+  the page. A lock held for more than 15 minutes is taken over.
+- **The OpenFit window froze when clicked.** A click in the launcher window started a Windows text
+  selection (QuickEdit), which pauses everything writing to that window, including the server, until Esc
+  is pressed. The phone then said "Can't reach your PC". QuickEdit is now off for OpenFit's windows.
+- The launcher reran `npm install` on every start after an update.
+- With npm 11.20 or newer, Prisma's install scripts were skipped (`allowScripts`); they're now approved in
+  `package.json`.
+- Setup run from the desktop app names its Desktop shortcut **OpenFit server**, so it doesn't clash with the
+  desktop app's own **OpenFit** shortcut.
+
 ## [0.1.3] - 2026-10-19
 
 ### Added

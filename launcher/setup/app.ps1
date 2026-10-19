@@ -34,6 +34,13 @@ function Test-InstallNeeded($root) {
     return (Get-MissingPackages $root).Count -gt 0
 }
 
+# Records that packages match package.json now. npm leaves its marker untouched when everything is
+# "up to date", so without this a newer package.json (an update) would reinstall on every start.
+function Set-InstallDone($root) {
+    $marker = Join-Path $root "node_modules\.package-lock.json"
+    if (Test-Path $marker) { (Get-Item $marker).LastWriteTime = Get-Date }
+}
+
 # True when the generated database client is missing or was made from an older prisma\schema.prisma.
 function Test-PrismaClientStale($root) {
     $client = Join-Path $root "node_modules\.prisma\client\index.js"
@@ -66,6 +73,7 @@ function Install-App($root) {
             }
             Say "Installing packages (about a minute)..."
             if (-not (Invoke-Quiet "Installing packages" { npm install --no-fund --no-audit })) { return $false }
+            Set-InstallDone $root
         } else {
             Say "Packages are already installed; skipping npm install."
         }

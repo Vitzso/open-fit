@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { dayKey } from "@/lib/dates";
 import { buildCoachContext, coachSystemMessage, NOTE_REQUEST } from "@/lib/coach";
-import { chatCompletion, OllamaError, releaseOllama, tryAcquireOllama } from "@/lib/ollama";
+import { acquireOllama, chatCompletion, OllamaError, ollamaBusyMessage, releaseOllama } from "@/lib/ollama";
 import { coachOptions } from "@/lib/coach/config";
 import { getSettings } from "@/lib/settings";
 
@@ -15,9 +15,9 @@ export async function GET() {
 }
 
 /** Write (or rewrite) today's note. */
-export async function POST() {
-  if (!tryAcquireOllama("note")) {
-    return NextResponse.json({ error: "The coach is busy right now. Try again in a moment." }, { status: 429 });
+export async function POST(req: Request) {
+  if (!(await acquireOllama("note", { signal: req.signal }))) {
+    return NextResponse.json({ error: ollamaBusyMessage() }, { status: 429 });
   }
   try {
     const [s, context] = await Promise.all([getSettings(), buildCoachContext()]);
@@ -25,6 +25,7 @@ export async function POST() {
       await chatCompletion([coachSystemMessage(context), { role: "user", content: NOTE_REQUEST }], {
         ...coachOptions(s),
         temperature: 0.5,
+        signal: req.signal, // you left the page: stop writing, so Ollama is free for what you do next
       })
     ).trim();
     if (!content) return NextResponse.json({ error: "The coach didn't write anything. Try again." }, { status: 502 });

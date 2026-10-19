@@ -2,7 +2,8 @@
 #   powershell -ExecutionPolicy Bypass -File launcher\create-shortcut.ps1            # in the project folder
 #   powershell -ExecutionPolicy Bypass -File launcher\create-shortcut.ps1 -Desktop   # also on your Desktop
 #   ... -StartMenu                                                                   # also in the Start menu
-param([switch]$Desktop, [switch]$StartMenu)
+#   ... -Name "OpenFit server"                                                       # name of those two (default OpenFit)
+param([switch]$Desktop, [switch]$StartMenu, [string]$Name = "OpenFit")
 $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent $PSScriptRoot
 $icon = Join-Path $PSScriptRoot "openfit.ico"
@@ -14,8 +15,8 @@ elseif ($pwsh -and $pwsh.Source -notlike "*\WindowsApps\Microsoft.PowerShell_*")
 else { $ps = (Get-Command powershell).Source }
 
 $targets = @(Join-Path $Root "OpenFit.lnk")
-if ($Desktop) { $targets += Join-Path ([Environment]::GetFolderPath("Desktop")) "OpenFit.lnk" }
-if ($StartMenu) { $targets += Join-Path ([Environment]::GetFolderPath("Programs")) "OpenFit.lnk" }
+if ($Desktop) { $targets += Join-Path ([Environment]::GetFolderPath("Desktop")) "$Name.lnk" }
+if ($StartMenu) { $targets += Join-Path ([Environment]::GetFolderPath("Programs")) "$Name.lnk" }
 
 $shell = New-Object -ComObject WScript.Shell
 foreach ($path in $targets) {

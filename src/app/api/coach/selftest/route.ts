@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { runCoachSelfTest, SELF_TEST_CASES } from "@/lib/coach";
-import { releaseOllama, tryAcquireOllama } from "@/lib/ollama";
+import { acquireOllama, ollamaBusyMessage, releaseOllama } from "@/lib/ollama";
 import { coachOptions } from "@/lib/coach/config";
 import { getSettings } from "@/lib/settings";
 
@@ -8,11 +8,10 @@ export const dynamic = "force-dynamic";
 
 /** Runs the coach self-test. Streams one JSON object per line (NDJSON) as each case finishes. */
 export async function POST(req: Request) {
-  if (!tryAcquireOllama("selftest")) {
-    return NextResponse.json({ error: "Ollama is busy with another request. Try again when it's finished." }, { status: 429 });
+  const cfg = coachOptions(await getSettings());
+  if (!(await acquireOllama("selftest", { signal: req.signal }))) {
+    return NextResponse.json({ error: ollamaBusyMessage() }, { status: 429 });
   }
-  const s = await getSettings();
-  const cfg = coachOptions(s);
   const upstream = new AbortController();
   req.signal.addEventListener("abort", () => upstream.abort(), { once: true });
 

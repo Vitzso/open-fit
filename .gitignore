@@ -24,6 +24,9 @@ OpenFit.lnk
 
 # desktop app installers (npm run dist:win / dist:mac in desktop/)
 desktop/dist/
+desktop/dist-*/
+# OpenFit copy the Windows installer ships (desktop/scripts/bundle.mjs)
+desktop/bundle/
 
 # local working folders
 .refactor-backup/

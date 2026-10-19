@@ -15,6 +15,27 @@ function Ask-YesNo($question, [bool]$default = $true) {
     return $a.Trim().ToLower().StartsWith("y")
 }
 
+# Turns off QuickEdit for this console window. With it on, a click in the window starts a text
+# selection, and Windows freezes everything that writes to the window (this script, npm, Prisma,
+# the OpenFit server) until Esc is pressed: the phone then says "Can't reach your PC". Copying text
+# still works with right-click > Mark. Does nothing in Windows Terminal or without a console.
+function Disable-QuickEdit {
+    try {
+        if (-not ("OpenFit.ConsoleMode" -as [type])) {
+            Add-Type -Namespace OpenFit -Name ConsoleMode -MemberDefinition @'
+[DllImport("kernel32.dll")] public static extern System.IntPtr GetStdHandle(int handle);
+[DllImport("kernel32.dll")] public static extern bool GetConsoleMode(System.IntPtr handle, out uint mode);
+[DllImport("kernel32.dll")] public static extern bool SetConsoleMode(System.IntPtr handle, uint mode);
+'@
+        }
+        $stdin = [OpenFit.ConsoleMode]::GetStdHandle(-10)
+        $mode = 0
+        if (-not [OpenFit.ConsoleMode]::GetConsoleMode($stdin, [ref]$mode)) { return }
+        # Clear ENABLE_QUICK_EDIT_MODE (0x40); ENABLE_EXTENDED_FLAGS (0x80) makes the change stick.
+        [void][OpenFit.ConsoleMode]::SetConsoleMode($stdin, ($mode -band (-bnot 0x40)) -bor 0x80)
+    } catch { }
+}
+
 # True if a command is on PATH.
 function Test-Command($name) { [bool](Get-Command $name -ErrorAction SilentlyContinue) }
 

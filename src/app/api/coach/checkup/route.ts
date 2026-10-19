@@ -1,16 +1,16 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { buildCoachContext, buildCoachMessages } from "@/lib/coach";
-import { releaseOllama, runOllamaCheckup, tryAcquireOllama } from "@/lib/ollama";
+import { acquireOllama, ollamaBusyMessage, releaseOllama, runOllamaCheckup } from "@/lib/ollama";
 import { coachOptions } from "@/lib/coach/config";
 import { getSettings } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
 
 /** Full Ollama checkup (health, model, speed, GPU, context fit, exposure). */
-export async function GET() {
-  if (!tryAcquireOllama("checkup")) {
-    return NextResponse.json({ error: "Ollama is busy with another request. Try again when it's finished." }, { status: 429 });
+export async function GET(req: Request) {
+  if (!(await acquireOllama("checkup", { signal: req.signal }))) {
+    return NextResponse.json({ error: ollamaBusyMessage() }, { status: 429 });
   }
   try {
     const [s, context, recent] = await Promise.all([

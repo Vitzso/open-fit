@@ -8,6 +8,6 @@ export { getModelCapabilities } from "./capabilities";
 export { chatCompletion, streamChatCompletion } from "./chat";
 export { checkOllamaHealth } from "./health";
 export { pullModel, type PullProgress } from "./pull";
-export { ollamaBusyWith, releaseOllama, tryAcquireOllama } from "./lock";
+export { acquireOllama, ollamaBusyMessage, ollamaBusyWith, releaseOllama, tryAcquireOllama } from "./lock";
 export { runOllamaCheckup } from "./checkup";
 export type { Check, CheckStatus, CheckupReport } from "./checkup/types";

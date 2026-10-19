@@ -1,7 +1,8 @@
 # OpenFit one-click setup. Double-click Setup.cmd (or run this file).
 # Installs whatever is missing and skips whatever is already done, so it's also "repair".
 #   -FromLauncher   called by launch.ps1 on first run: don't offer to start OpenFit at the end
-param([switch]$FromLauncher)
+#   -FromDesktop    called by the OpenFit desktop app, which opens itself when this window closes
+param([switch]$FromLauncher, [switch]$FromDesktop)
 $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent $PSScriptRoot
 Set-Location $Root
@@ -10,6 +11,7 @@ $Host.UI.RawUI.WindowTitle = "OpenFit setup"
 foreach ($part in "common", "node", "git", "env", "app", "modules", "ollama", "remote", "certs", "shortcut") {
     . (Join-Path $PSScriptRoot "setup\$part.ps1")
 }
+Disable-QuickEdit
 
 Write-Host ""
 Write-Host "  OpenFit setup" -ForegroundColor Green
@@ -52,7 +54,8 @@ Step 8 $total "HTTPS certificates"
 $results["HTTPS"] = Initialize-Certs $Root
 
 Step 9 $total "Desktop shortcut"
-$results["Shortcut"] = Install-Shortcut $Root
+# The desktop app's installer already put "OpenFit" (the dashboard) on the Desktop; this one starts the server.
+$results["Shortcut"] = if ($FromDesktop) { Install-Shortcut $Root "OpenFit server" } else { Install-Shortcut $Root }
 
 Write-Host ""
 Write-Host "  Summary" -ForegroundColor Green
@@ -62,6 +65,11 @@ foreach ($k in $results.Keys) {
 Write-Host ""
 
 if ($FromLauncher) { return }
+if ($FromDesktop) {
+    Say "To use OpenFit on your phone, start it with the ""OpenFit server"" shortcut on your Desktop."
+    Read-Host "  Press Enter to close this window and open the OpenFit app"
+    return
+}
 if (Ask-YesNo "Start OpenFit now?" $true) {
     Start-Process (Join-Path $Root "OpenFit.cmd")
 }

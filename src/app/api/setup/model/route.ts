@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { OllamaError, pullModel, releaseOllama, tryAcquireOllama } from "@/lib/ollama";
+import { acquireOllama, OllamaError, ollamaBusyMessage, pullModel, releaseOllama } from "@/lib/ollama";
 import { coachOptions } from "@/lib/coach/config";
 import { getSettings } from "@/lib/settings";
 
@@ -7,10 +7,10 @@ export const dynamic = "force-dynamic";
 
 /** Downloads the coach's model. Streams one JSON progress object per line (NDJSON). */
 export async function POST(req: Request) {
-  if (!tryAcquireOllama("model-pull")) {
-    return NextResponse.json({ error: "The coach is busy right now. Try again in a moment." }, { status: 429 });
-  }
   const s = await getSettings();
+  if (!(await acquireOllama("model-pull", { signal: req.signal }))) {
+    return NextResponse.json({ error: ollamaBusyMessage() }, { status: 429 });
+  }
   const progress = pullModel(coachOptions(s), req.signal);
   const encoder = new TextEncoder();
   const send = (c: ReadableStreamDefaultController<Uint8Array>, obj: unknown) => c.enqueue(encoder.encode(JSON.stringify(obj) + "\n"));

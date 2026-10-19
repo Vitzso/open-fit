@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { estimateFood, FoodAiError } from "@/lib/food-ai/estimate";
-import { OllamaError, releaseOllama, tryAcquireOllama } from "@/lib/ollama";
+import { acquireOllama, OllamaError, ollamaBusyMessage, releaseOllama } from "@/lib/ollama";
 
 export const dynamic = "force-dynamic";
 
@@ -22,8 +22,8 @@ export async function POST(req: Request) {
   }
   const body = Body.safeParse(await req.json().catch(() => null));
   if (!body.success) return NextResponse.json({ error: body.error.issues[0]?.message ?? "Invalid request." }, { status: 400 });
-  if (!tryAcquireOllama("food-ai")) {
-    return NextResponse.json({ error: "The AI is busy right now. Try again in a moment." }, { status: 429 });
+  if (!(await acquireOllama("food-ai", { signal: req.signal }))) {
+    return NextResponse.json({ error: ollamaBusyMessage() }, { status: 429 });
   }
   try {
     const items = await estimateFood(body.data);

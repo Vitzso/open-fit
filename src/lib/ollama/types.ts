@@ -28,6 +28,11 @@ export interface ChatOptions extends Partial<OllamaConfig> {
   /** Abort from outside, e.g. the HTTP request's signal when the client disconnects. */
   signal?: AbortSignal;
   reasoningEffort?: ReasoningEffort;
+  /**
+   * Most tokens to generate, thinking included (default 4096). Stops a model that loops on itself
+   * from holding Ollama, and every other coach feature waiting behind it, indefinitely.
+   */
+  maxTokens?: number;
   /** Ask for JSON matching this schema (structured output), e.g. for parsing food estimates. */
   jsonSchema?: { name: string; schema: Record<string, unknown> };
 }

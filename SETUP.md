@@ -2,7 +2,13 @@
 
 ## Quick start: one click
 
-Double-click **`Setup.cmd`** in the OpenFit folder. It installs whatever is missing and
+**Easiest:** install the desktop app (`OpenFit-Setup-x.y.z.exe` from the
+[latest release](https://github.com/Vitzso/open-fit/releases)). On a PC without OpenFit it
+installs it (in your user folder, or one you choose), opens Setup in its own window for the
+steps below, then shows your dashboard. Start the phone app with the **OpenFit server**
+shortcut Setup adds.
+
+**Or by hand:** double-click **`Setup.cmd`** in the OpenFit folder. It installs whatever is missing and
 skips whatever is already done, so it's also the "repair" button:
 
 1. Node.js (via winget, Windows' built-in installer)
@@ -343,7 +349,16 @@ npm run dist:win          # on Windows: desktop\dist\OpenFit Setup <version>.exe
 npm run dist:mac          # on a Mac:   desktop/dist/OpenFit-<version>.dmg
 ```
 
-The installed app asks once where your OpenFit folder is and remembers it. On a Mac, set
+On Windows the installer includes OpenFit itself. On a PC without OpenFit the app offers to
+install it (choose **I already have OpenFit** to pick an existing folder instead), then runs
+Setup in its own window and opens when Setup is done. If packages or the build go missing
+later, it offers to run Setup again. Installing a newer `OpenFit-Setup` updates the OpenFit
+folder and keeps your data (`.env`, the database, `data/`, `certs/`): close the **OpenFit
+server** window first. A git checkout is never overwritten; update it with `git pull`.
+`npm run dist:win` bundles the committed files (`npm run bundle -- --working-tree` includes
+uncommitted edits, for testing).
+
+The Mac app asks once where your OpenFit folder is and remembers it. On a Mac, set
 OpenFit up with `npm install && npm run build` in that folder first (Setup.cmd is
 Windows-only). The installers aren't code-signed, so Windows SmartScreen and macOS
 Gatekeeper ask you to confirm the first time you open it.
@@ -407,4 +422,5 @@ The PC still has to be on with the launcher running. A Home Screen icon added fr
 | Coach: "Model … is not installed" | `ollama pull <model>`, or choose one of the listed models in Settings. |
 | Coach: "did not respond in time" | The model is still loading (the first request after a restart can take 30–90 s on CPU), or it's too large for your hardware. Try a 7–8B model. |
 | Barcode "not found" | The product isn't in Open Food Facts yet. Add it manually (the form opens with the barcode filled in), and consider contributing it at openfoodfacts.org. |
+| Phone says "Can't reach your PC" while the PC is on | The OpenFit server isn't running: start it with the OpenFit (or **OpenFit server**) shortcut and keep its window open. Older versions froze when you clicked inside that window (a Windows text selection pauses it until you press Esc); 0.1.4 turns that off. |
 | `spawn … schema-engine-windows.exe ENOENT` | The project path is too long. Move it to a short path like `C:\dev\openfit`. |

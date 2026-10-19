@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { asRange, formatPeriodSummary, getDashboardData } from "@/lib/dashboard";
 import { buildCoachContext, coachSystemMessage, reportRequest } from "@/lib/coach";
-import { chatCompletion, OllamaError, releaseOllama, tryAcquireOllama } from "@/lib/ollama";
+import { acquireOllama, chatCompletion, OllamaError, ollamaBusyMessage, releaseOllama } from "@/lib/ollama";
 import { coachOptions } from "@/lib/coach/config";
 import { getSettings } from "@/lib/settings";
 
@@ -24,8 +24,8 @@ export async function GET() {
 /** Writes a new progress report for `?range=` days (7, 30, 90, 180 or 365). */
 export async function POST(req: NextRequest) {
   const range = asRange(req.nextUrl.searchParams.get("range"));
-  if (!tryAcquireOllama("report")) {
-    return NextResponse.json({ error: "The coach is busy right now. Try again in a moment." }, { status: 429 });
+  if (!(await acquireOllama("report", { signal: req.signal }))) {
+    return NextResponse.json({ error: ollamaBusyMessage() }, { status: 429 });
   }
   try {
     const [s, context, data] = await Promise.all([getSettings(), buildCoachContext(), getDashboardData(range)]);
@@ -34,6 +34,7 @@ export async function POST(req: NextRequest) {
       await chatCompletion([coachSystemMessage({ ...context, text }), { role: "user", content: reportRequest(range) }], {
         ...coachOptions(s),
         temperature: 0.4,
+        signal: req.signal, // the desktop app closed: stop writing, free Ollama
       })
     ).trim();
     if (!content) return NextResponse.json({ error: "The coach didn't write anything. Try again." }, { status: 502 });

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { buildCoachContext, buildCoachMessages } from "@/lib/coach";
-import { OllamaError, releaseOllama, streamChatCompletion, tryAcquireOllama } from "@/lib/ollama";
+import { acquireOllama, OllamaError, ollamaBusyMessage, releaseOllama, streamChatCompletion } from "@/lib/ollama";
 import { coachOptions } from "@/lib/coach/config";
 import { getSettings } from "@/lib/settings";
 
@@ -36,12 +36,9 @@ export async function POST(req: Request) {
   if (!parsed.success) {
     return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
   }
-  // One Ollama job at a time (shared with checkups and self-tests).
-  if (!tryAcquireOllama("coach")) {
-    return NextResponse.json(
-      { error: "The coach is busy with another request. Try again in a moment." },
-      { status: 429 },
-    );
+  // One Ollama job at a time (shared with notes, checkups and self-tests): wait for our turn.
+  if (!(await acquireOllama("coach", { signal: req.signal }))) {
+    return NextResponse.json({ error: ollamaBusyMessage() }, { status: 429 });
   }
   let handedOff = false; // once true, the stream is responsible for releasing the lock
 

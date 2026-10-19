@@ -11,6 +11,7 @@ $Host.UI.RawUI.WindowTitle = "OpenFit server"
 foreach ($part in "common", "node", "app", "modules", "git", "remote", "certs", "ollama") {
     . (Join-Path $PSScriptRoot "setup\$part.ps1")
 }
+Disable-QuickEdit
 
 # Shows an error and keeps the window open so it can be read.
 function Fail($msg) {
@@ -64,6 +65,7 @@ if (Test-InstallNeeded $Root) {
     Say "Updating packages..."
     npm install --no-fund --no-audit
     if ($LASTEXITCODE -ne 0) { Fail "npm install failed (see above)." }
+    Set-InstallDone $Root
 }
 if (Test-PrismaClientStale $Root) {
     if (-not (Invoke-Quiet "Preparing the database client" { npx prisma generate })) { Fail "Preparing the database client failed." }
