@@ -370,7 +370,7 @@ npm run desktop
 
 ```
 cd desktop
-npm run dist:win          # on Windows: desktop\dist\OpenFit Setup <version>.exe
+npm run dist:win          # on Windows: desktop\dist\OpenFit-Setup-<version>.exe
 npm run dist:mac          # on a Mac:   desktop/dist/OpenFit-<version>.dmg
 ```
 
@@ -382,6 +382,18 @@ folder and keeps your data (`.env`, the database, `data/`, `certs/`): quit OpenF
 (tray icon, **Quit**, or close its server window if you started it with `OpenFit.cmd`). A git checkout is never overwritten; update it with `git pull`.
 `npm run dist:win` bundles the committed files (`npm run bundle -- --working-tree` includes
 uncommitted edits, for testing).
+
+**Release installers are built by CI.** Pushing a version tag (`git tag v0.2.0 && git push origin
+v0.2.0`, matching the version in `package.json` and `desktop/package.json`) runs
+[`.github/workflows/release-windows.yml`](.github/workflows/release-windows.yml) on GitHub: it runs
+the same `npm ci` and `npm run dist:win` on Windows, keeps `OpenFit-Setup-<version>.exe` as a
+workflow artifact and attaches it to the release for that tag (creating the release if needed;
+notes of an existing release are kept). It can also be run by hand from the Actions tab. Building
+in CI from this public repository is what lets [SignPath Foundation](https://signpath.org) code-sign
+the installer for free. Signing is switched off until the project is accepted; to turn it on, add
+the `SIGNPATH_API_TOKEN` repository secret, fill in the organization id, project slug and signing
+policy slug in the commented-out signing step, uncomment it and point `INSTALLER_DIR` at
+`desktop/dist/signed`.
 
 The Mac app asks once where your OpenFit folder is and remembers it. On a Mac, set
 OpenFit up with `npm install && npm run build` in that folder first (Setup.cmd is
