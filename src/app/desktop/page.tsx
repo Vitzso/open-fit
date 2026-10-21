@@ -27,7 +27,19 @@ const NAV: { href: string; label: string; section: Section }[] = [
   { href: "#food", label: "Food", section: "food" },
   { href: "#training", label: "Training", section: "train" },
   { href: "#coach", label: "Coach report", section: "coach" },
+  { href: "#connection", label: "Connection", section: "today" },
 ];
+
+/** Where OpenFit answers, as the launcher found it at start (launch.ps1 sets OPENFIT_ADDRESSES). */
+function addresses(): { url: string; label: string }[] {
+  return (process.env.OPENFIT_ADDRESSES ?? "")
+    .split(";")
+    .filter(Boolean)
+    .map((a) => {
+      const [url, label = ""] = a.split("|");
+      return { url, label };
+    });
+}
 
 const n = (v: number) => v.toLocaleString("en-US");
 const signed = (v: number) => `${v > 0 ? "+" : ""}${v}`;
@@ -59,6 +71,7 @@ export default async function DesktopDashboard({ searchParams }: { searchParams:
   const d = await getDashboardData(range);
   const u = d.unit;
   const domain: [string, string] = [d.from, d.to];
+  const addrs = addresses();
 
   // Headline numbers.
   const w = d.weight;
@@ -288,6 +301,21 @@ export default async function DesktopDashboard({ searchParams }: { searchParams:
                 <LiftGrid lifts={d.training.lifts} unit={u} domain={domain} />
               </ChartCard>
             </section>
+
+            <ChartCard id="connection" section="today" title="Connection" summary="The addresses OpenFit answers on. Type one into your phone's browser to open OpenFit there.">
+              {addrs.length ? (
+                <ul className="divide-y divide-line">
+                  {addrs.map((a) => (
+                    <li key={a.url} className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 py-2.5">
+                      <span className="text-muted">{a.label}</span>
+                      <code className="select-all font-mono text-fg">{a.url}</code>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-muted">Start OpenFit with the launcher or the desktop app to see its addresses here.</p>
+              )}
+            </ChartCard>
           </div>
 
           <div className="xl:sticky xl:top-6 xl:self-start">

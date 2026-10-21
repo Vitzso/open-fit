@@ -144,6 +144,10 @@ if ($remoteCfg.Provider -ne "none") {
     elseif ($remoteCfg.Explicit) { Say "($($remoteCfg.Label) isn't connected, so OpenFit works on home Wi-Fi only right now.)" DarkGray }
 }
 if (-not $https) { Say "(Live barcode scanning on iPhone needs HTTPS: see SETUP.md step 6.)" DarkGray }
+# The same addresses for the dashboard's Connection card (signed-in pages only).
+$addresses = @("$localUrl|This PC") + @($lanIps | ForEach-Object { "${scheme}://${_}:$port|Phone on home Wi-Fi" })
+if ($remoteCfg.Provider -ne "none" -and $away) { $addresses += "${scheme}://${away}:$port|Phone anywhere ($($remoteCfg.Label))" }
+$env:OPENFIT_ADDRESSES = $addresses -join ";"
 if ($Headless) {
     Write-Output "OPENFIT-URL $localUrl"
     foreach ($ip in $lanIps) { Write-Output "OPENFIT-PHONE ${scheme}://${ip}:$port home Wi-Fi" }

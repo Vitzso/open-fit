@@ -2,6 +2,15 @@
 
 All notable changes to OpenFit. Versions follow [Semantic Versioning](https://semver.org).
 
+## [0.1.11] - 2026-10-22
+
+### Added
+
+- **Connection card on the desktop dashboard.** Forgot which address to type on your phone? The
+  dashboard's new **Connection** section (in the sidebar) lists where OpenFit answers: this PC, your
+  phone on home Wi-Fi, and your phone anywhere (Tailscale or your other remote access). Like the rest of
+  the dashboard, it only shows after you enter your passcode.
+
 ## [0.1.10] - 2026-10-20
 
 ### Fixed
